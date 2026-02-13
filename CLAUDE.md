@@ -224,15 +224,15 @@ nautobot-app-prometheus-graphql/
 
 1. `graphql_requests_total` - Total request counter
 
-   - Labels: `operation_type` (query/mutation), `operation_name`, `status` (success/error)
+    - Labels: `operation_type` (query/mutation), `operation_name`, `status` (success/error)
 
 2. `graphql_request_duration_seconds` - Duration histogram
 
-   - Labels: `operation_type`, `operation_name`
-   - Buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.5, 5.0, 10.0]
+    - Labels: `operation_type`, `operation_name`
+    - Buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.5, 5.0, 10.0]
 
 3. `graphql_errors_total` - Error counter
-   - Labels: `operation_type`, `operation_name`, `error_type`
+    - Labels: `operation_type`, `operation_name`, `error_type`
 
 **Advanced metrics (Phase 2):** 4. `graphql_field_resolution_duration_seconds` - Duration per field
 
@@ -240,10 +240,10 @@ nautobot-app-prometheus-graphql/
 
 5. `graphql_query_depth` - Query depth
 
-   - Labels: `operation_name`
+    - Labels: `operation_name`
 
 6. `graphql_query_complexity` - Query complexity
-   - Labels: `operation_name`
+    - Labels: `operation_name`
 
 **Step 1.3: Middleware implementation**
 
@@ -757,9 +757,9 @@ Once you have Nautobot running, you can test your middleware by:
    ```
 
 4. **Test GraphQL queries**:
-   - Navigate to `http://localhost:8080/graphql/`
-   - Run test queries
-   - Check your metrics endpoint
+    - Navigate to `http://localhost:8080/graphql/`
+    - Run test queries
+    - Check your metrics endpoint
 
 ### Troubleshooting
 

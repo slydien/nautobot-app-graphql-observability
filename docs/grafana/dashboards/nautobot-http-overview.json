@@ -341,7 +341,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "topk(10, sum by (view) (rate(django_http_requests_latency_seconds_by_view_method_sum{method=~\"$method\"}[$__rate_interval])) / sum by (view) (rate(django_http_requests_latency_seconds_by_view_method_count{method=~\"$method\"}[$__rate_interval])))",
+          "expr": "topk(10, sum by (view) (django_http_requests_latency_seconds_by_view_method_sum{method=~\"$method\"}) / sum by (view) (django_http_requests_latency_seconds_by_view_method_count{method=~\"$method\"}))",
           "format": "table",
           "instant": true,
           "legendFormat": "",
@@ -531,7 +531,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (view) (rate(django_http_requests_latency_seconds_by_view_method_count{method=~\"$method\"}[$__rate_interval]))",
+          "expr": "sum by (view) (django_http_requests_latency_seconds_by_view_method_count{method=~\"$method\"})",
           "format": "table",
           "instant": true,
           "legendFormat": "",
@@ -539,7 +539,7 @@
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (view) (rate(django_http_requests_latency_seconds_by_view_method_sum{method=~\"$method\"}[$__rate_interval])) / sum by (view) (rate(django_http_requests_latency_seconds_by_view_method_count{method=~\"$method\"}[$__rate_interval]))",
+          "expr": "sum by (view) (django_http_requests_latency_seconds_by_view_method_sum{method=~\"$method\"}) / sum by (view) (django_http_requests_latency_seconds_by_view_method_count{method=~\"$method\"})",
           "format": "table",
           "instant": true,
           "legendFormat": "",

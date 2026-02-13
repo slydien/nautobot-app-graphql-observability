@@ -22,6 +22,29 @@ if DEBUG and not _TESTING:
         MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")  # noqa: F405
 
 #
+# Prometheus scrape fix
+#
+# Nautobot's NautobotMetricsView uses AcceptHeaderVersioning which rejects
+# Prometheus's "Accept: text/plain;version=0.0.4" header with HTTP 406.
+# This middleware rewrites the Accept header on /metrics/ to plain "text/plain".
+#
+
+
+class FixPrometheusAcceptMiddleware:
+    """Rewrite Accept header on /metrics/ so Prometheus can scrape."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.path == "/metrics/":
+            request.META["HTTP_ACCEPT"] = "text/plain"
+        return self.get_response(request)
+
+
+MIDDLEWARE.insert(0, f"{__name__}.FixPrometheusAcceptMiddleware")  # noqa: F405
+
+#
 # Misc. settings
 #
 

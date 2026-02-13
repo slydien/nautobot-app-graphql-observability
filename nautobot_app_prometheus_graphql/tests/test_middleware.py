@@ -92,16 +92,30 @@ class PrometheusMiddlewareBasicTest(TestCase):
         self.next_func.assert_called_once_with(parent, info)
 
     @patch("nautobot_app_prometheus_graphql.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
-    def test_anonymous_operation_name(self, _mock_settings):
-        info = _make_info(operation_name=None)
+    def test_unnamed_operation_uses_root_field(self, _mock_settings):
+        info = _make_info_with_ast("{ devices { id } }")
         before = graphql_requests_total.labels(
-            operation_type="query", operation_name="anonymous", status="success"
+            operation_type="query", operation_name="devices", status="success"
         )._value.get()
 
         self.middleware.resolve(self.next_func, None, info)
 
         after = graphql_requests_total.labels(
-            operation_type="query", operation_name="anonymous", status="success"
+            operation_type="query", operation_name="devices", status="success"
+        )._value.get()
+        self.assertEqual(after - before, 1)
+
+    @patch("nautobot_app_prometheus_graphql.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
+    def test_unnamed_operation_multiple_root_fields(self, _mock_settings):
+        info = _make_info_with_ast("{ devices { id } locations { id } }")
+        before = graphql_requests_total.labels(
+            operation_type="query", operation_name="devices,locations", status="success"
+        )._value.get()
+
+        self.middleware.resolve(self.next_func, None, info)
+
+        after = graphql_requests_total.labels(
+            operation_type="query", operation_name="devices,locations", status="success"
         )._value.get()
         self.assertEqual(after - before, 1)
 

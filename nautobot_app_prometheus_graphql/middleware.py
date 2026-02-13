@@ -3,6 +3,7 @@
 import time
 
 from graphql import GraphQLResolveInfo
+from graphql.language.ast import FieldNode
 
 from nautobot_app_prometheus_graphql.metrics import (
     graphql_errors_total,
@@ -146,7 +147,16 @@ class PrometheusMiddleware:  # pylint: disable=too-few-public-methods
 
     @staticmethod
     def _get_operation_name(info: GraphQLResolveInfo) -> str:
-        """Extract the operation name from the GraphQL query, or 'anonymous' if unnamed."""
+        """Extract the operation name from the GraphQL query.
+
+        Uses the explicit operation name if provided, otherwise falls back
+        to the sorted, comma-joined root field names (e.g. "devices,locations").
+        """
         if info.operation.name:
             return info.operation.name.value
-        return "anonymous"
+        root_fields = []
+        if info.operation.selection_set:
+            for selection in info.operation.selection_set.selections:
+                if isinstance(selection, FieldNode):
+                    root_fields.append(selection.name.value)
+        return ",".join(sorted(root_fields)) if root_fields else "anonymous"

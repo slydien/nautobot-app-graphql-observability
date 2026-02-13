@@ -5,22 +5,33 @@
   <a href="https://pypi.org/project/nautobot-app-graphql-observability/"><img src="https://img.shields.io/pypi/v/nautobot-app-graphql-observability"></a>
   <a href="https://pypi.org/project/nautobot-app-graphql-observability/"><img src="https://img.shields.io/pypi/dm/nautobot-app-graphql-observability"></a>
   <br>
-  A Prometheus metrics app for <a href="https://nautobot.com/">Nautobot</a>.
+  A GraphQL observability app for <a href="https://nautobot.com/">Nautobot</a> — Prometheus metrics and structured query logging.
 </p>
 
 ## Overview
 
-A Nautobot app that instruments GraphQL API queries with [Prometheus](https://prometheus.io/) metrics. It operates as a [Graphene middleware](https://docs.graphene-python.org/en/latest/execution/middleware/), intercepting GraphQL field resolutions to collect performance, usage, and error data — without modifying Nautobot's core code.
+A Nautobot app that provides comprehensive observability for the GraphQL API. It includes two [Graphene middlewares](https://docs.graphene-python.org/en/latest/execution/middleware/) that collect Prometheus metrics and emit structured query logs — without modifying Nautobot's core code.
 
 ### Features
+
+**Prometheus Metrics** (`PrometheusMiddleware`):
 
 - **Request metrics**: Count and measure the duration of all GraphQL queries and mutations.
 - **Error tracking**: Count errors by operation and exception type.
 - **Query depth & complexity**: Histogram metrics for query nesting depth and total field count.
 - **Per-user tracking**: Count requests per authenticated user for auditing and capacity planning.
 - **Per-field resolution**: Optionally measure individual field resolver durations for debugging.
-- **Prometheus metrics**: All metrics appear at Nautobot's default `/metrics/` endpoint — no extra endpoint needed.
-- **Zero configuration**: Automatically patches Nautobot's `GraphQLDRFAPIView` to load the middleware — no manual `GRAPHENE["MIDDLEWARE"]` setup needed.
+- All metrics appear at Nautobot's default `/metrics/` endpoint — no extra endpoint needed.
+
+**Query Logging** (`GraphQLQueryLoggingMiddleware`):
+
+- **Structured log entries**: Operation type, name, user, duration, and status for every query.
+- **Optional query body and variables**: Include the full query text and variables in log entries.
+- **Standard Python logging**: Route logs to any backend (file, syslog, ELK, etc.) via Django's `LOGGING` configuration.
+
+**General**:
+
+- **Zero configuration**: Automatically patches Nautobot's `GraphQLDRFAPIView` to load the middlewares — no manual `GRAPHENE["MIDDLEWARE"]` setup needed.
 
 ### Quick Install
 

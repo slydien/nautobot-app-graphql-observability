@@ -57,17 +57,17 @@ class GraphQLQueryLoggingMiddleware:  # pylint: disable=too-few-public-methods
         }
     """
 
-    def resolve(self, next, root, info, **kwargs):  # pylint: disable=redefined-builtin
+    def resolve(self, next: callable, root: object, info: "GraphQLResolveInfo", **kwargs: object) -> object:  # pylint: disable=redefined-builtin
         """Intercept root-level resolutions and log query details.
 
         Args:
-            next: Callable to continue the resolution chain.
-            root: Parent resolved value. None for top-level fields.
-            info: GraphQL resolve info containing operation metadata.
-            **kwargs: Field arguments.
+            next (callable): Callable to continue the resolution chain.
+            root (object): Parent resolved value. None for top-level fields.
+            info (GraphQLResolveInfo): GraphQL resolve info containing operation metadata.
+            **kwargs (object): Field arguments.
 
         Returns:
-            The result of the resolver.
+            object: The result of the resolver.
         """
         if root is not None:
             return next(root, info, **kwargs)

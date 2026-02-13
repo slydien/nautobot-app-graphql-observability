@@ -38,11 +38,16 @@ PLUGINS = ["nautobot_app_graphql_observability"]
 
 PLUGINS_CONFIG = {
     "nautobot_app_graphql_observability": {
+        # Prometheus metrics settings
         "graphql_metrics_enabled": True,
         "track_query_depth": True,
         "track_query_complexity": True,
         "track_field_resolution": False,
         "track_per_user": True,
+        # Query logging settings
+        "query_logging_enabled": False,
+        "log_query_body": False,
+        "log_query_variables": False,
     }
 }
 ```
@@ -70,13 +75,23 @@ sudo systemctl restart nautobot nautobot-worker nautobot-scheduler
 
 The app behavior can be controlled with the following list of settings:
 
+### Prometheus Metrics Settings
+
 | Key | Type | Default | Description |
 | --- | ---- | ------- | ----------- |
-| `graphql_metrics_enabled` | `bool` | `True` | Enable or disable all metrics collection. When `False`, the middleware is a no-op. |
+| `graphql_metrics_enabled` | `bool` | `True` | Enable or disable all metrics collection. When `False`, the Prometheus middleware is a no-op. |
 | `track_query_depth` | `bool` | `True` | Record a histogram of GraphQL query nesting depth. |
 | `track_query_complexity` | `bool` | `True` | Record a histogram of GraphQL query complexity (total field count). |
 | `track_field_resolution` | `bool` | `False` | Record per-field resolver duration. **Warning:** enabling this adds significant overhead for queries with many fields. |
 | `track_per_user` | `bool` | `True` | Record a per-user request counter using the authenticated username. |
+
+### Query Logging Settings
+
+| Key | Type | Default | Description |
+| --- | ---- | ------- | ----------- |
+| `query_logging_enabled` | `bool` | `False` | Enable or disable GraphQL query logging. When `False`, the logging middleware is a no-op. |
+| `log_query_body` | `bool` | `False` | Include the full GraphQL query text in log entries. |
+| `log_query_variables` | `bool` | `False` | Include the GraphQL query variables in log entries. **Warning:** may log sensitive data. |
 
 ## Multi-Process Deployments
 

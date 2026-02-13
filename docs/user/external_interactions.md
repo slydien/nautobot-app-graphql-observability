@@ -53,6 +53,19 @@ An example Alertmanager rule file is provided at `docs/grafana/alerts/nautobot-a
 
 Import these rules into your Prometheus or Grafana alerting configuration.
 
+### Query Log Integration
+
+The logging middleware emits structured log entries to the `nautobot_app_graphql_observability.graphql_query_log` Python logger. These logs can be forwarded to external systems via Django's `LOGGING` configuration:
+
+| Target | Handler Class | Notes |
+| ------ | ------------- | ----- |
+| File | `logging.FileHandler` | Write to a dedicated log file for rotation and archival. |
+| Syslog | `logging.handlers.SysLogHandler` | Forward to a centralized syslog server. |
+| HTTP | `logging.handlers.HTTPHandler` | Send log entries to an HTTP endpoint (e.g., Logstash, Splunk HEC). |
+| Console | `logging.StreamHandler` | Default behavior — writes to stderr. |
+
+See [Query Logging](app_use_cases.md#query-logging) for configuration examples.
+
 ## Nautobot REST API Endpoints
 
 This app does not add any REST API endpoints. All metrics are available at Nautobot's default `/metrics/` endpoint.

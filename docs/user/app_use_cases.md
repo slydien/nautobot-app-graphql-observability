@@ -69,3 +69,66 @@ Compare query vs mutation traffic to understand API usage patterns:
 ```promql
 sum by (operation_type) (rate(graphql_requests_total[5m]))
 ```
+
+## Query Logging
+
+The app includes a separate logging middleware that emits structured log entries for every GraphQL operation. This complements the Prometheus metrics by providing per-request detail that can be searched, filtered, and forwarded to log aggregation systems.
+
+### Enabling Query Logging
+
+Set `query_logging_enabled` to `True` in your `PLUGINS_CONFIG`:
+
+```python
+PLUGINS_CONFIG = {
+    "nautobot_app_graphql_observability": {
+        "query_logging_enabled": True,
+        "log_query_body": True,
+        "log_query_variables": False,
+    }
+}
+```
+
+### Log Output Format
+
+Each query produces a structured log line:
+
+```
+14:32:05.123 INFO    nautobot_app_graphql_observability.graphql_query_log : operation_type=query operation_name=GetDevices user=admin duration_ms=42.3 status=success query=query GetDevices { devices { name } }
+```
+
+Failed queries are logged at WARNING level and include the error type:
+
+```
+14:32:06.456 WARNING nautobot_app_graphql_observability.graphql_query_log : operation_type=query operation_name=BadQuery user=admin duration_ms=5.1 status=error error_type=GraphQLError
+```
+
+### Routing Logs to External Systems
+
+The logging middleware uses Python's standard `logging` module with the logger name `nautobot_app_graphql_observability.graphql_query_log`. You can route these logs to any backend via Django's `LOGGING` configuration:
+
+```python
+# nautobot_config.py
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "graphql_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "/var/log/nautobot/graphql_queries.log",
+        },
+    },
+    "loggers": {
+        "nautobot_app_graphql_observability.graphql_query_log": {
+            "handlers": ["graphql_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
+```
+
+### Security Considerations
+
+!!! warning
+    Enabling `log_query_body` will log the full GraphQL query text, and `log_query_variables` will log query variables which may contain sensitive data (passwords, tokens, etc.). Only enable these in environments where log access is properly secured.

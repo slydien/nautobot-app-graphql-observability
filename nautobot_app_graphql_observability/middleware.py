@@ -52,20 +52,20 @@ class PrometheusMiddleware:  # pylint: disable=too-few-public-methods
         }
     """
 
-    def resolve(self, next, root, info: GraphQLResolveInfo, **kwargs):  # pylint: disable=redefined-builtin
+    def resolve(self, next: callable, root: object, info: GraphQLResolveInfo, **kwargs: object) -> object:  # pylint: disable=redefined-builtin
         """Intercept each field resolution and record metrics.
 
         Root-level resolutions (root is None) record basic and advanced metrics.
         Nested resolutions optionally record per-field duration when enabled.
 
         Args:
-            next: Callable to continue the resolution chain.
-            root: Parent resolved value. None for top-level fields.
-            info: GraphQL resolve info containing operation metadata.
-            **kwargs: Field arguments.
+            next (callable): Callable to continue the resolution chain.
+            root (object): Parent resolved value. None for top-level fields.
+            info (GraphQLResolveInfo): GraphQL resolve info containing operation metadata.
+            **kwargs (object): Field arguments.
 
         Returns:
-            The result of the resolver.
+            object: The result of the resolver.
         """
         config = _get_app_settings()
 

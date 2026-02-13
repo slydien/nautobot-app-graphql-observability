@@ -59,8 +59,28 @@ scrape_configs:
       - targets: ["nautobot:8080"]
 ```
 
+### 4. Enable Query Logging (Optional)
+
+To also log every GraphQL query to the console, enable logging in your `nautobot_config.py`:
+
+```python
+PLUGINS_CONFIG = {
+    "nautobot_app_graphql_observability": {
+        "query_logging_enabled": True,
+        "log_query_body": True,
+    }
+}
+```
+
+After restarting Nautobot, send a GraphQL query and check the Nautobot logs. You should see entries like:
+
+```
+14:32:05.123 INFO    nautobot_app_graphql_observability.graphql_query_log : operation_type=query operation_name=GetDevices user=admin duration_ms=42.3 status=success query=query GetDevices { devices { name } }
+```
+
 ## What are the next steps?
 
-- Review the [App Configuration](../admin/install.md#app-configuration) to tune which metrics are collected.
+- Review the [App Configuration](../admin/install.md#app-configuration) to tune which metrics and logging options are enabled.
 - Set up Grafana dashboards using the provided [templates](external_interactions.md#grafana-dashboards).
+- Route query logs to external systems — see [Query Logging](app_use_cases.md#query-logging).
 - Check out the [Use Cases](app_use_cases.md) section for more examples.

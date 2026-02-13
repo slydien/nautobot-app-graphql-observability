@@ -47,6 +47,32 @@ The `prometheus_client` library will use shared files in this directory to aggre
 
 Nautobot 3.x's `GraphQLDRFAPIView.init_graphql()` has a bug: when `self.middleware` is `None` (the default), it does not load middleware from the `GRAPHENE["MIDDLEWARE"]` Django setting. The app patches this method during `AppConfig.ready()` to ensure configured Graphene middleware is properly loaded.
 
+## How do I enable GraphQL query logging?
+
+Set `query_logging_enabled` to `True` in your `PLUGINS_CONFIG`:
+
+```python
+PLUGINS_CONFIG = {
+    "nautobot_app_graphql_observability": {
+        "query_logging_enabled": True,
+    }
+}
+```
+
+Optionally enable `log_query_body` and `log_query_variables` to include the query text and variables in each log entry. See [Query Logging](app_use_cases.md#query-logging) for details on routing logs to external systems.
+
+## Why aren't my query logs appearing?
+
+The logging middleware uses a dedicated logger (`nautobot_app_graphql_observability.graphql_query_log`) that writes to stderr by default. If you have a custom Django `LOGGING` configuration that suppresses loggers not explicitly listed, you may need to add an entry for this logger. See [Routing Logs to External Systems](app_use_cases.md#routing-logs-to-external-systems).
+
+## Can I use metrics and logging independently?
+
+Yes. The two middlewares are independent:
+
+- Set `graphql_metrics_enabled: True` and `query_logging_enabled: False` for metrics only.
+- Set `graphql_metrics_enabled: False` and `query_logging_enabled: True` for logging only.
+- Enable both for full observability.
+
 ## Can I use this app without Nautobot?
 
-The `PrometheusMiddleware` class is a standard Graphene middleware. While this Nautobot app handles the automatic setup and configuration, the middleware itself could be used in any Graphene-based project by manually adding it to your `GRAPHENE["MIDDLEWARE"]` setting.
+The `PrometheusMiddleware` and `GraphQLQueryLoggingMiddleware` classes are standard Graphene middlewares. While this Nautobot app handles the automatic setup and configuration, the middlewares themselves could be used in any Graphene-based project by manually adding them to your `GRAPHENE["MIDDLEWARE"]` setting.

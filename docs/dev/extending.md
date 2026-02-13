@@ -33,3 +33,22 @@ Adding labels to existing metrics is a **breaking change** for Prometheus (it cr
 ## Customizing Histogram Buckets
 
 The default histogram buckets are defined in `metrics.py`. To customize them for your deployment, you can fork the metric definitions. A future enhancement may allow bucket configuration via `PLUGINS_CONFIG`.
+
+## Extending the Logging Middleware
+
+The `GraphQLQueryLoggingMiddleware` in `nautobot_app_graphql_observability/logging_middleware.py` can be extended to add custom fields to log entries. The middleware uses Python's standard `logging` module with the logger name `nautobot_app_graphql_observability.graphql_query_log`.
+
+To add custom log fields, subclass `GraphQLQueryLoggingMiddleware` and override `_log_query()`:
+
+```python
+from nautobot_app_graphql_observability.logging_middleware import GraphQLQueryLoggingMiddleware
+
+class CustomLoggingMiddleware(GraphQLQueryLoggingMiddleware):
+    @staticmethod
+    def _log_query(config, operation_type, operation_name, user, start_time, info, error=None):
+        # Call parent to emit the standard log entry
+        GraphQLQueryLoggingMiddleware._log_query(
+            config, operation_type, operation_name, user, start_time, info, error
+        )
+        # Add custom logic here
+```

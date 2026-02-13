@@ -9,7 +9,7 @@ from graphql import GraphQLResolveInfo
 from nautobot_app_graphql_observability.middleware import PrometheusMiddleware, _get_app_settings
 
 LOGGER_NAME = "nautobot_app_graphql_observability.graphql_query_log"
-_logger_configured = False
+_LOGGER_CONFIGURED = False
 
 
 def _get_logger():
@@ -18,10 +18,10 @@ def _get_logger():
     Deferred setup avoids being overwritten by Django's ``dictConfig``
     which runs during ``django.setup()``.
     """
-    global _logger_configured  # noqa: PLW0603  # pylint: disable=global-statement
+    global _LOGGER_CONFIGURED  # noqa: PLW0603  # pylint: disable=global-statement
     log = logging.getLogger(LOGGER_NAME)
-    if not _logger_configured:
-        _logger_configured = True
+    if not _LOGGER_CONFIGURED:
+        _LOGGER_CONFIGURED = True
         if not log.handlers:
             handler = logging.StreamHandler()
             handler.setFormatter(
@@ -78,17 +78,14 @@ class GraphQLQueryLoggingMiddleware:  # pylint: disable=too-few-public-methods
         if not config.get("query_logging_enabled", False):
             return next(root, info, **kwargs)
 
-        operation_type = info.operation.operation.value
-        operation_name = PrometheusMiddleware._get_operation_name(info)
-        user = self._get_user(info)
         start_time = time.monotonic()
 
         try:
             result = next(root, info, **kwargs)
-            self._log_query(config, operation_type, operation_name, user, start_time, info)
+            self._log_query(config, info, start_time)
             return result
         except Exception as error:
-            self._log_query(config, operation_type, operation_name, user, start_time, info, error=error)
+            self._log_query(config, info, start_time, error=error)
             raise
 
     @staticmethod
@@ -101,8 +98,11 @@ class GraphQLQueryLoggingMiddleware:  # pylint: disable=too-few-public-methods
         return "anonymous"
 
     @staticmethod
-    def _log_query(config, operation_type, operation_name, user, start_time, info, error=None):
+    def _log_query(config, info, start_time, error=None):
         """Emit a structured log entry for the GraphQL query."""
+        operation_type = info.operation.operation.value
+        operation_name = PrometheusMiddleware._get_operation_name(info)
+        user = GraphQLQueryLoggingMiddleware._get_user(info)
         duration_ms = (time.monotonic() - start_time) * 1000
         status = "error" if error else "success"
 

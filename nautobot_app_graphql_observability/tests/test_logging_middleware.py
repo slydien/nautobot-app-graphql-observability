@@ -1,4 +1,5 @@
 """Tests for the GraphQLQueryLoggingMiddleware."""
+# pylint: disable=duplicate-code
 
 from unittest.mock import MagicMock, patch
 

@@ -7,7 +7,6 @@ on: # yamllint disable-line rule:truthy rule:comments
   push:
     branches:
       - "main"
-      - "develop"
   pull_request: ~
 
 env:
@@ -19,11 +18,14 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
-      - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+      - name: "Setup Python"
+        uses: "actions/setup-python@v5"
         with:
-          poetry-version: "2.1.3"
-          poetry-install-options: "--only-root"
+          python-version: "3.12"
+      - name: "Install Poetry"
+        run: "pipx install poetry==2.1.3"
+      - name: "Install dependencies"
+        run: "poetry install --only-root"
       - name: "Regenerate poetry.lock"
         run: "poetry lock --regenerate"
       - name: "Upload poetry.lock"
@@ -43,10 +45,14 @@ jobs:
         uses: "actions/download-artifact@v4"
         with:
           name: "poetry-lock"
-      - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+      - name: "Setup Python"
+        uses: "actions/setup-python@v5"
         with:
-          poetry-version: "2.1.3"
+          python-version: "3.12"
+      - name: "Install Poetry"
+        run: "pipx install poetry==2.1.3"
+      - name: "Install dependencies"
+        run: "poetry install"
       - name: "Linting: ruff format"
         run: "poetry run invoke ruff --action format"
   ruff-lint:
@@ -61,10 +67,14 @@ jobs:
         uses: "actions/download-artifact@v4"
         with:
           name: "poetry-lock"
-      - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+      - name: "Setup Python"
+        uses: "actions/setup-python@v5"
         with:
-          poetry-version: "2.1.3"
+          python-version: "3.12"
+      - name: "Install Poetry"
+        run: "pipx install poetry==2.1.3"
+      - name: "Install dependencies"
+        run: "poetry install"
       - name: "Linting: ruff"
         run: "poetry run invoke ruff --action lint"
   check-docs-build:
@@ -79,11 +89,14 @@ jobs:
         uses: "actions/download-artifact@v4"
         with:
           name: "poetry-lock"
-      - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+      - name: "Setup Python"
+        uses: "actions/setup-python@v5"
         with:
-          poetry-version: "2.1.3"
-          poetry-install-options: "--only dev,docs"
+          python-version: "3.12"
+      - name: "Install Poetry"
+        run: "pipx install poetry==2.1.3"
+      - name: "Install dependencies"
+        run: "poetry install --only dev,docs"
       - name: "Check Docs Build"
         run: "poetry run invoke build-and-check-docs"
   poetry:
@@ -93,10 +106,14 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
-      - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+      - name: "Setup Python"
+        uses: "actions/setup-python@v5"
         with:
-          poetry-version: "2.1.3"
+          python-version: "3.12"
+      - name: "Install Poetry"
+        run: "pipx install poetry==2.1.3"
+      - name: "Install dependencies"
+        run: "poetry install"
       - name: "Checking: poetry lock file"
         run: "poetry run invoke lock --check"
   yamllint:
@@ -111,10 +128,14 @@ jobs:
         uses: "actions/download-artifact@v4"
         with:
           name: "poetry-lock"
-      - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+      - name: "Setup Python"
+        uses: "actions/setup-python@v5"
         with:
-          poetry-version: "2.1.3"
+          python-version: "3.12"
+      - name: "Install Poetry"
+        run: "pipx install poetry==2.1.3"
+      - name: "Install dependencies"
+        run: "poetry install"
       - name: "Linting: yamllint"
         run: "poetry run invoke yamllint"
   markdownlint:
@@ -129,10 +150,14 @@ jobs:
         uses: "actions/download-artifact@v4"
         with:
           name: "poetry-lock"
-      - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+      - name: "Setup Python"
+        uses: "actions/setup-python@v5"
         with:
-          poetry-version: "2.1.3"
+          python-version: "3.12"
+      - name: "Install Poetry"
+        run: "pipx install poetry==2.1.3"
+      - name: "Install dependencies"
+        run: "poetry install"
       - name: "Linting: markdownlint"
         run: "poetry run invoke markdownlint"
   check-in-docker:
@@ -154,19 +179,23 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
-      - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+      - name: "Setup Python"
+        uses: "actions/setup-python@v5"
         with:
-          poetry-version: "2.1.3"
+          python-version: "3.12"
+      - name: "Install Poetry"
+        run: "pipx install poetry==2.1.3"
+      - name: "Install dependencies"
+        run: "poetry install"
       - name: "Constrain Nautobot version and regenerate lock file"
         env:
           INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_LOCAL: "true"
         run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver=${{ matrix.python-version }}"
       - name: "Set up Docker Buildx"
         id: "buildx"
-        uses: "docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2"  # v3.10.0
+        uses: "docker/setup-buildx-action@v3"
       - name: "Build"
-        uses: "docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25"  # v5.4.0
+        uses: "docker/build-push-action@v5"
         with:
           builder: "${{ steps.buildx.outputs.name }}"
           context: "./"
@@ -192,7 +221,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.10"]  # 3.13 stable is tested in unittest_report stage.
+        python-version: ["3.10"]
         db-backend: ["postgresql"]
         nautobot-version: ["stable"]
         include:
@@ -209,19 +238,23 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
-      - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+      - name: "Setup Python"
+        uses: "actions/setup-python@v5"
         with:
-          poetry-version: "2.1.3"
+          python-version: "3.12"
+      - name: "Install Poetry"
+        run: "pipx install poetry==2.1.3"
+      - name: "Install dependencies"
+        run: "poetry install"
       - name: "Constrain Nautobot version and regenerate lock file"
         env:
           INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_LOCAL: "true"
         run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver=${{ matrix.python-version }}"
       - name: "Set up Docker Buildx"
         id: "buildx"
-        uses: "docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2"  # v3.10.0
+        uses: "docker/setup-buildx-action@v3"
       - name: "Build"
-        uses: "docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25"  # v5.4.0
+        uses: "docker/build-push-action@v5"
         with:
           builder: "${{ steps.buildx.outputs.name }}"
           context: "./"
@@ -259,19 +292,23 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
-      - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+      - name: "Setup Python"
+        uses: "actions/setup-python@v5"
         with:
-          poetry-version: "2.1.3"
+          python-version: "3.12"
+      - name: "Install Poetry"
+        run: "pipx install poetry==2.1.3"
+      - name: "Install dependencies"
+        run: "poetry install"
       - name: "Constrain Nautobot version and regenerate lock file"
         env:
           INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_LOCAL: "true"
         run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver=${{ matrix.python-version }}"
       - name: "Set up Docker Buildx"
         id: "buildx"
-        uses: "docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2"  # v3.10.0
+        uses: "docker/setup-buildx-action@v3"
       - name: "Build"
-        uses: "docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25"  # v5.4.0
+        uses: "docker/build-push-action@v5"
         with:
           builder: "${{ steps.buildx.outputs.name }}"
           context: "./"
@@ -293,11 +330,9 @@ jobs:
       - name: "Run Tests"
         run: "poetry run invoke unittest --coverage"
       - name: "Generate Coverage Comment"
-        if: >
-          contains(fromJson('["develop","ltm-1.6"]'), github.base_ref) &&
-          (github.head_ref != 'main') && (!startsWith(github.head_ref, 'release'))
+        if: "github.event_name == 'pull_request'"
         id: "coverage_comment"
-        uses: "py-cov-action/python-coverage-comment-action@d1ff8fbb5ff80feedb3faa0f6d7b424f417ad0e1"  # v3.30
+        uses: "py-cov-action/python-coverage-comment-action@v3"
         with:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           MINIMUM_GREEN: 90
@@ -305,18 +340,14 @@ jobs:
           ANNOTATE_MISSING_LINES: true
           ANNOTATION_TYPE: "warning"
       - name: "Store Pull Request comment to be posted"
-        if: >
-          contains(fromJson('["develop","ltm-1.6"]'), github.base_ref) &&
-          (github.head_ref != 'main') && (!startsWith(github.head_ref, 'release'))
+        if: "github.event_name == 'pull_request'"
         uses: "actions/upload-artifact@v4"
         with:
           name: "python-coverage-comment-action"
           path: "python-coverage-comment-action.txt"
   changelog:
     needs: "generate-lockfile"
-    if: >
-      contains(fromJson('["develop","ltm-1.6"]'), github.base_ref) &&
-      (github.head_ref != 'main') && (!startsWith(github.head_ref, 'release'))
+    if: "github.event_name == 'pull_request'"
     runs-on: "ubuntu-latest"
     steps:
       - name: "Check out repository code"
@@ -327,11 +358,15 @@ jobs:
         uses: "actions/download-artifact@v4"
         with:
           name: "poetry-lock"
-      - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+      - name: "Setup Python"
+        uses: "actions/setup-python@v5"
         with:
-          poetry-version: "2.1.3"
+          python-version: "3.12"
+      - name: "Install Poetry"
+        run: "pipx install poetry==2.1.3"
+      - name: "Install dependencies"
+        run: "poetry install"
       - name: "Check for changelog entry"
         run: |
-          git fetch --no-tags origin +refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
-          poetry run towncrier check --compare-with origin/${{ github.base_ref }}
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          poetry run towncrier check --compare-with origin/main

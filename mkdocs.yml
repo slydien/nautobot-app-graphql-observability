@@ -4,7 +4,7 @@ edit_uri: "edit/main/docs"
 site_dir: "nautobot_app_prometheus_graphql/static/nautobot_app_prometheus_graphql/docs"
 site_name: "Nautobot App Prometheus Graphql Documentation"
 site_url: "https://docs.nautobot.com/projects/nautobot-app-prometheus-graphql/en/latest/"
-repo_url: "https://github.com/slydien/nautobot-app-nautobot-app-prometheus-graphql"
+repo_url: "https://github.com/slydien/nautobot-app-prometheus-graphql"
 copyright: "Copyright &copy; The Authors"
 theme:
   name: "material"

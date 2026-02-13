@@ -205,7 +205,7 @@ Create a wrapper around `GraphQLView` to instrument at the Django view level rat
 **Step 1.1: Project structure**
 
 ```
-nautobot-app-prometheus-graphql/
+nautobot-app-graphql-observability/
 ├── pyproject.toml
 ├── README.md
 ├── nautobot_graphql_prometheus/
@@ -383,10 +383,10 @@ graphql_errors_total = Counter(
 **Step 2.1: Nautobot application structure**
 
 ```
-nautobot-app-prometheus-graphql/
+nautobot-app-graphql-observability/
 ├── pyproject.toml
 ├── README.md
-├── nautobot_prometheus_graphql/
+├── nautobot_app_graphql_observability/
 │   ├── __init__.py              # NautobotAppConfig
 │   ├── urls.py                  # /metrics endpoint
 │   ├── middleware.py            # Import of Graphene middleware
@@ -396,16 +396,16 @@ nautobot-app-prometheus-graphql/
 **Step 2.2: Nautobot App configuration**
 
 ```python
-# nautobot_prometheus_graphql/__init__.py
+# nautobot_app_graphql_observability/__init__.py
 from nautobot.apps import NautobotAppConfig
 
 class PrometheusGraphQLConfig(NautobotAppConfig):
-    name = 'nautobot_prometheus_graphql'
+    name = 'nautobot_app_graphql_observability'
     verbose_name = 'Prometheus GraphQL Metrics'
     version = '1.0.0'
     author = 'Your Name'
     description = 'Export Prometheus metrics for GraphQL queries'
-    base_url = 'prometheus-graphql'
+    base_url = 'graphql-observability'
     required_settings = []
     default_settings = {
         'graphql_metrics_enabled': True,
@@ -419,7 +419,7 @@ config = PrometheusGraphQLConfig
 **Step 2.3: Prometheus endpoint**
 
 ```python
-# nautobot_prometheus_graphql/views.py
+# nautobot_app_graphql_observability/views.py
 from django.http import HttpResponse
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
@@ -430,7 +430,7 @@ def metrics_view(request):
 ```
 
 ```python
-# nautobot_prometheus_graphql/urls.py
+# nautobot_app_graphql_observability/urls.py
 from django.urls import path
 from .views import metrics_view
 
@@ -446,20 +446,20 @@ urlpatterns = [
 
 # 1. Add app to PLUGINS (or INSTALLED_APPS for recent versions)
 PLUGINS = [
-    'nautobot_prometheus_graphql',
+    'nautobot_app_graphql_observability',
 ]
 
 # 2. Configure Graphene middleware
 GRAPHENE = {
     'SCHEMA': 'nautobot.core.graphql.schema.schema',
     'MIDDLEWARE': [
-        'nautobot_prometheus_graphql.middleware.PrometheusMiddleware',
+        'nautobot_app_graphql_observability.middleware.PrometheusMiddleware',
     ]
 }
 
 # 3. Optional app configuration
 PLUGINS_CONFIG = {
-    'nautobot_prometheus_graphql': {
+    'nautobot_app_graphql_observability': {
         'graphql_metrics_enabled': True,
         'track_field_resolution': False,
         'track_query_complexity': False,
@@ -735,12 +735,12 @@ Once you have Nautobot running, you can test your middleware by:
    Edit `nautobot_config.py`:
 
    ```python
-   PLUGINS = ['nautobot_prometheus_graphql']
+   PLUGINS = ['nautobot_app_graphql_observability']
 
    GRAPHENE = {
        'SCHEMA': 'nautobot.core.graphql.schema.schema',
        'MIDDLEWARE': [
-           'nautobot_prometheus_graphql.middleware.PrometheusMiddleware',
+           'nautobot_app_graphql_observability.middleware.PrometheusMiddleware',
        ]
    }
    ```

@@ -1,13 +1,13 @@
 ---
-nautobot_app_prometheus_graphql:
+nautobot_app_graphql_observability:
   nautobot_ver: "3.0.0"
   python_ver: "3.12"
   # local: false
-  # compose_dir: "/full/path/to/nautobot-app-prometheus-graphql/development"
+  # compose_dir: "/full/path/to/nautobot-app-graphql-observability/development"
 
 # The following is an example of using MySQL as the database backend
 # ---
-# nautobot_app_prometheus_graphql:
+# nautobot_app_graphql_observability:
 #   compose_files:
 #     - "docker-compose.base.yml"
 #     - "docker-compose.redis.yml"

@@ -10,7 +10,7 @@ on: # yamllint disable-line rule:truthy rule:comments
   pull_request: ~
 
 env:
-  APP_NAME: "nautobot-app-prometheus-graphql"
+  APP_NAME: "nautobot-app-graphql-observability"
 
 jobs:
   generate-lockfile:
@@ -37,7 +37,7 @@ jobs:
     needs: "generate-lockfile"
     runs-on: "ubuntu-latest"
     env:
-      INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_LOCAL: "True"
+      INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_LOCAL: "True"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
@@ -59,7 +59,7 @@ jobs:
     needs: "generate-lockfile"
     runs-on: "ubuntu-latest"
     env:
-      INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_LOCAL: "True"
+      INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_LOCAL: "True"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
@@ -81,7 +81,7 @@ jobs:
     needs: "generate-lockfile"
     runs-on: "ubuntu-latest"
     env:
-      INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_LOCAL: "True"
+      INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_LOCAL: "True"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
@@ -102,7 +102,7 @@ jobs:
   poetry:
     runs-on: "ubuntu-latest"
     env:
-      INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_LOCAL: "True"
+      INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_LOCAL: "True"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
@@ -120,7 +120,7 @@ jobs:
     needs: "generate-lockfile"
     runs-on: "ubuntu-latest"
     env:
-      INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_LOCAL: "True"
+      INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_LOCAL: "True"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
@@ -142,7 +142,7 @@ jobs:
     needs: "generate-lockfile"
     runs-on: "ubuntu-latest"
     env:
-      INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_LOCAL: "True"
+      INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_LOCAL: "True"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
@@ -174,8 +174,8 @@ jobs:
         python-version: ["3.10"]
         nautobot-version: ["3.0.0"]
     env:
-      INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_PYTHON_VER: "${{ matrix.python-version }}"
-      INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
+      INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_PYTHON_VER: "${{ matrix.python-version }}"
+      INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
@@ -189,7 +189,7 @@ jobs:
         run: "poetry install"
       - name: "Constrain Nautobot version and regenerate lock file"
         env:
-          INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_LOCAL: "true"
+          INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_LOCAL: "true"
         run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver=${{ matrix.python-version }}"
       - name: "Set up Docker Buildx"
         id: "buildx"
@@ -233,8 +233,8 @@ jobs:
             nautobot-version: "stable"
     runs-on: "ubuntu-latest"
     env:
-      INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_PYTHON_VER: "${{ matrix.python-version }}"
-      INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
+      INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_PYTHON_VER: "${{ matrix.python-version }}"
+      INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
@@ -248,7 +248,7 @@ jobs:
         run: "poetry install"
       - name: "Constrain Nautobot version and regenerate lock file"
         env:
-          INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_LOCAL: "true"
+          INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_LOCAL: "true"
         run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver=${{ matrix.python-version }}"
       - name: "Set up Docker Buildx"
         id: "buildx"
@@ -287,8 +287,8 @@ jobs:
       pull-requests: "write"
       contents: "write"
     env:
-      INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_PYTHON_VER: "${{ matrix.python-version }}"
-      INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
+      INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_PYTHON_VER: "${{ matrix.python-version }}"
+      INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
@@ -302,7 +302,7 @@ jobs:
         run: "poetry install"
       - name: "Constrain Nautobot version and regenerate lock file"
         env:
-          INVOKE_NAUTOBOT_APP_PROMETHEUS_GRAPHQL_LOCAL: "true"
+          INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_LOCAL: "true"
         run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver=${{ matrix.python-version }}"
       - name: "Set up Docker Buildx"
         id: "buildx"

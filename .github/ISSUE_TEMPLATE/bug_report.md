@@ -1,6 +1,6 @@
 ---
 name: 🐛 Bug Report
-about: Report a reproducible bug in the current release of nautobot-app-prometheus-graphql
+about: Report a reproducible bug in the current release of nautobot-app-graphql-observability
 labels:
   - "type: bug"
 ---
@@ -8,7 +8,7 @@ labels:
 ### Environment
 * Python version:  <!-- Example: 3.11.4 -->
 * Nautobot version:  <!-- Example: 3.0.0 -->
-* nautobot-app-prometheus-graphql version:  <!-- Example: 1.0.0 -->
+* nautobot-app-graphql-observability version:  <!-- Example: 1.0.0 -->
 
 <!-- What did you expect to happen? -->
 ### Expected Behavior

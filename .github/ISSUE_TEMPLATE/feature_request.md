@@ -7,7 +7,7 @@ labels:
 
 ### Environment
 * Nautobot version:  <!-- Example: 3.0.0 -->
-* nautobot-app-prometheus-graphql version:  <!-- Example: 1.0.0 -->
+* nautobot-app-graphql-observability version:  <!-- Example: 1.0.0 -->
 
 <!--
     Describe in detail the new functionality you are proposing.

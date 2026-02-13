@@ -13,31 +13,31 @@ Here you will find detailed instructions on how to **install** and **configure**
 ## Install Guide
 
 !!! note
-    Apps can be installed from the [Python Package Index](https://pypi.org/) or locally. See the [Nautobot documentation](https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/installation/app-install/) for more details. The pip package name for this app is [`nautobot-app-prometheus-graphql`](https://pypi.org/project/nautobot-app-prometheus-graphql/).
+    Apps can be installed from the [Python Package Index](https://pypi.org/) or locally. See the [Nautobot documentation](https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/installation/app-install/) for more details. The pip package name for this app is [`nautobot-app-graphql-observability`](https://pypi.org/project/nautobot-app-graphql-observability/).
 
 The app is available as a Python package via PyPI and can be installed with `pip`:
 
 ```shell
-pip install nautobot-app-prometheus-graphql
+pip install nautobot-app-graphql-observability
 ```
 
-To ensure the app is automatically re-installed during future upgrades, create a file named `local_requirements.txt` (if not already existing) in the Nautobot root directory (alongside `requirements.txt`) and list the `nautobot-app-prometheus-graphql` package:
+To ensure the app is automatically re-installed during future upgrades, create a file named `local_requirements.txt` (if not already existing) in the Nautobot root directory (alongside `requirements.txt`) and list the `nautobot-app-graphql-observability` package:
 
 ```shell
-echo nautobot-app-prometheus-graphql >> local_requirements.txt
+echo nautobot-app-graphql-observability >> local_requirements.txt
 ```
 
 Once installed, the app needs to be enabled in your Nautobot configuration. The following block of code below shows the additional configuration required to be added to your `nautobot_config.py` file:
 
-- Append `"nautobot_app_prometheus_graphql"` to the `PLUGINS` list.
-- Optionally append the `"nautobot_app_prometheus_graphql"` dictionary to the `PLUGINS_CONFIG` dictionary to override any defaults.
+- Append `"nautobot_app_graphql_observability"` to the `PLUGINS` list.
+- Optionally append the `"nautobot_app_graphql_observability"` dictionary to the `PLUGINS_CONFIG` dictionary to override any defaults.
 
 ```python
 # In your nautobot_config.py
-PLUGINS = ["nautobot_app_prometheus_graphql"]
+PLUGINS = ["nautobot_app_graphql_observability"]
 
 PLUGINS_CONFIG = {
-    "nautobot_app_prometheus_graphql": {
+    "nautobot_app_graphql_observability": {
         "graphql_metrics_enabled": True,
         "track_query_depth": True,
         "track_query_complexity": True,

@@ -1,1 +1,1 @@
-::: nautobot_app_prometheus_graphql
+::: nautobot_app_graphql_observability

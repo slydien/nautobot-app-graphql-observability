@@ -1,6 +1,6 @@
 ---
-nautobot_app_prometheus_graphql:
-  project_name: "nautobot-app-prometheus-graphql"
+nautobot_app_graphql_observability:
+  project_name: "nautobot-app-graphql-observability"
   nautobot_ver: "3.0.0"
   local: false
   python_ver: "3.12"

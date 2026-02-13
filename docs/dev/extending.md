@@ -6,7 +6,7 @@ Contributions and extensions are welcome. Please open an issue first to discuss 
 
 To add a new Prometheus metric:
 
-1. Define the metric in `nautobot_app_prometheus_graphql/metrics.py`:
+1. Define the metric in `nautobot_app_graphql_observability/metrics.py`:
 
     ```python
     from prometheus_client import Counter
@@ -18,9 +18,9 @@ To add a new Prometheus metric:
     )
     ```
 
-2. Import and record it in the appropriate method of `PrometheusMiddleware` in `nautobot_app_prometheus_graphql/middleware.py`.
+2. Import and record it in the appropriate method of `PrometheusMiddleware` in `nautobot_app_graphql_observability/middleware.py`.
 
-3. If the metric should be optional, add a new boolean setting to `NautobotAppPrometheusGraphqlConfig.default_settings` in `__init__.py` and gate the recording behind a config check in the middleware.
+3. If the metric should be optional, add a new boolean setting to `NautobotAppGraphqlObservabilityConfig.default_settings` in `__init__.py` and gate the recording behind a config check in the middleware.
 
 ## Adding New Labels to Existing Metrics
 

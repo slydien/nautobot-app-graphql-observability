@@ -1,13 +1,13 @@
 [tool.poetry]
-name = "nautobot-app-prometheus-graphql"
+name = "nautobot-app-graphql-observability"
 version = "1.0.0"
-description = "Nautobot App Prometheus Graphql"
+description = "Nautobot App GraphQL Observability"
 authors = ["Lydien SANDANASAMY <dev@slydien.com>"]
 license = "Apache-2.0"
 readme = "README.md"
-homepage = "https://github.com/slydien/nautobot-app-prometheus-graphql"
-repository = "https://github.com/slydien/nautobot-app-prometheus-graphql"
-documentation = "https://docs.nautobot.com/projects/nautobot-app-prometheus-graphql/en/latest/"
+homepage = "https://github.com/slydien/nautobot-app-graphql-observability"
+repository = "https://github.com/slydien/nautobot-app-graphql-observability"
+documentation = "https://docs.nautobot.com/projects/nautobot-app-graphql-observability/en/latest/"
 keywords = ["nautobot", "nautobot-app", "nautobot-plugin"]
 classifiers = [
     "Intended Audience :: Developers",
@@ -19,11 +19,11 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 packages = [
-    { include = "nautobot_app_prometheus_graphql" },
+    { include = "nautobot_app_graphql_observability" },
 ]
 include = [
     # Poetry by default will exclude files that are in .gitignore
-    { path = "nautobot_app_prometheus_graphql/static/nautobot_app_prometheus_graphql/docs/**/*", format = ["sdist", "wheel"] }
+    { path = "nautobot_app_graphql_observability/static/nautobot_app_graphql_observability/docs/**/*", format = ["sdist", "wheel"] }
 ]
 
 [tool.poetry.dependencies]
@@ -130,10 +130,10 @@ ignore = [
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"nautobot_app_prometheus_graphql/migrations/*" = [
+"nautobot_app_graphql_observability/migrations/*" = [
     "D",
 ]
-"nautobot_app_prometheus_graphql/tests/*" = [
+"nautobot_app_graphql_observability/tests/*" = [
     "D",
     "S"
 ]
@@ -146,7 +146,7 @@ omit = [
     "*/tests/*",
 ]
 include = [
-    "nautobot_app_prometheus_graphql/*",
+    "nautobot_app_graphql_observability/*",
 ]
 
 [tool.pymarkdown]
@@ -160,12 +160,12 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.towncrier]
-package = "nautobot_app_prometheus_graphql"
+package = "nautobot_app_graphql_observability"
 directory = "changes"
 filename = "docs/admin/release_notes/version_X.Y.md"
 template = "development/towncrier_template.j2"
 start_string = "<!-- towncrier release notes start -->"
-issue_format = "[#{issue}](https://github.com/slydien/nautobot-app-prometheus-graphql/issues/{issue})"
+issue_format = "[#{issue}](https://github.com/slydien/nautobot-app-graphql-observability/issues/{issue})"
 
 [[tool.towncrier.type]]
 directory = "breaking"
@@ -220,4 +220,4 @@ showcontent = true
 [tool.djlint]
 ignore = "H005,H006,H008,H011,H012,H013,H014,H015,H016,H019,H020,H021,H022,H023,H025,H026,H030,H031,H037"
 profile="django"
-extend_exclude = "docs/,nautobot_app_prometheus_graphql/static/"
+extend_exclude = "docs/,nautobot_app_graphql_observability/static/"

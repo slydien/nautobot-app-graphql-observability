@@ -142,21 +142,25 @@ if not _TESTING:
 #
 
 # Enable installed Apps. Add the name of each App to the list.
-PLUGINS = ["nautobot_app_prometheus_graphql"]
+PLUGINS = ["nautobot_app_graphql_observability"]
 
 # Apps configuration settings. These settings are used by various Apps that the user may have installed.
 # Each key in the dictionary is the name of an installed App and its value is a dictionary of settings.
 PLUGINS_CONFIG = {
-    "nautobot_app_prometheus_graphql": {
+    "nautobot_app_graphql_observability": {
         "graphql_metrics_enabled": True,
         "track_query_depth": True,
         "track_query_complexity": True,
         "track_field_resolution": False,
         "track_per_user": True,
+        "query_logging_enabled": True,
+        "log_query_body": True,
+        "log_query_variables": False,
     },
 }
 
-# Graphene middleware for Prometheus metrics
+# Graphene middleware for GraphQL query logging and Prometheus metrics
 GRAPHENE["MIDDLEWARE"] = [  # noqa: F405
-    "nautobot_app_prometheus_graphql.middleware.PrometheusMiddleware",
+    "nautobot_app_graphql_observability.logging_middleware.GraphQLQueryLoggingMiddleware",
+    "nautobot_app_graphql_observability.middleware.PrometheusMiddleware",
 ]

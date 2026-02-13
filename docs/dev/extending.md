@@ -1,0 +1,35 @@
+# Extending the App
+
+Contributions and extensions are welcome. Please open an issue first to discuss the proposed change before submitting a PR.
+
+## Adding Custom Metrics
+
+To add a new Prometheus metric:
+
+1. Define the metric in `nautobot_app_prometheus_graphql/metrics.py`:
+
+    ```python
+    from prometheus_client import Counter
+
+    graphql_deprecated_fields_total = Counter(
+        "graphql_deprecated_fields_total",
+        "Total usage of deprecated GraphQL fields",
+        ["type_name", "field_name"],
+    )
+    ```
+
+2. Import and record it in the appropriate method of `PrometheusMiddleware` in `nautobot_app_prometheus_graphql/middleware.py`.
+
+3. If the metric should be optional, add a new boolean setting to `NautobotAppPrometheusGraphqlConfig.default_settings` in `__init__.py` and gate the recording behind a config check in the middleware.
+
+## Adding New Labels to Existing Metrics
+
+Adding labels to existing metrics is a **breaking change** for Prometheus (it creates a new time series). If you need additional labels:
+
+1. Consider creating a new metric instead.
+2. If modifying an existing metric, update the label list in `metrics.py` and all `.labels()` calls in `middleware.py`.
+3. Update tests to include the new label values.
+
+## Customizing Histogram Buckets
+
+The default histogram buckets are defined in `metrics.py`. To customize them for your deployment, you can fork the metric definitions. A future enhancement may allow bucket configuration via `PLUGINS_CONFIG`.

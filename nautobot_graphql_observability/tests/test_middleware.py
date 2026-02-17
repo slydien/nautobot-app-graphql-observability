@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from django.test import TestCase
 from graphql import parse
 
-from nautobot_app_graphql_observability.metrics import (
+from nautobot_graphql_observability.metrics import (
     graphql_errors_total,
     graphql_field_resolution_duration_seconds,
     graphql_query_complexity,
@@ -13,7 +13,7 @@ from nautobot_app_graphql_observability.metrics import (
     graphql_requests_by_user_total,
     graphql_requests_total,
 )
-from nautobot_app_graphql_observability.middleware import (
+from nautobot_graphql_observability.middleware import (
     _REQUEST_ATTR,
     PrometheusMiddleware,
 )
@@ -71,7 +71,7 @@ class PrometheusMiddlewareBasicTest(TestCase):
         self.middleware = PrometheusMiddleware()
         self.next_func = MagicMock(return_value="resolved_value")
 
-    @patch("nautobot_app_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
+    @patch("nautobot_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
     def test_root_resolver_increments_request_counter(self, _mock_settings):
         info = _make_info(operation_type="query", operation_name="GetDevices")
         before = graphql_requests_total.labels(
@@ -88,7 +88,7 @@ class PrometheusMiddlewareBasicTest(TestCase):
         )._value.get()
         self.assertEqual(after - before, 1)
 
-    @patch("nautobot_app_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
+    @patch("nautobot_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
     def test_nested_resolver_skips_metrics(self, _mock_settings):
         info = _make_info()
         parent = {"some": "parent"}
@@ -97,7 +97,7 @@ class PrometheusMiddlewareBasicTest(TestCase):
         self.assertEqual(result, "resolved_value")
         self.next_func.assert_called_once_with(parent, info)
 
-    @patch("nautobot_app_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
+    @patch("nautobot_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
     def test_unnamed_operation_uses_root_field(self, _mock_settings):
         info = _make_info_with_ast("{ devices { id } }")
         before = graphql_requests_total.labels(
@@ -111,7 +111,7 @@ class PrometheusMiddlewareBasicTest(TestCase):
         )._value.get()
         self.assertEqual(after - before, 1)
 
-    @patch("nautobot_app_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
+    @patch("nautobot_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
     def test_unnamed_operation_multiple_root_fields(self, _mock_settings):
         info = _make_info_with_ast("{ devices { id } locations { id } }")
         before = graphql_requests_total.labels(
@@ -125,7 +125,7 @@ class PrometheusMiddlewareBasicTest(TestCase):
         )._value.get()
         self.assertEqual(after - before, 1)
 
-    @patch("nautobot_app_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
+    @patch("nautobot_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
     def test_error_increments_error_counter(self, _mock_settings):
         info = _make_info(operation_type="mutation", operation_name="CreateDevice")
         self.next_func.side_effect = ValueError("bad input")
@@ -150,7 +150,7 @@ class PrometheusMiddlewareBasicTest(TestCase):
         )._value.get()
         self.assertEqual(request_after - request_before, 1)
 
-    @patch("nautobot_app_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
+    @patch("nautobot_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
     def test_root_resolver_stashes_labels_for_duration(self, _mock_settings):
         info = _make_info(operation_type="query", operation_name="StashTest")
 
@@ -168,7 +168,7 @@ class PrometheusMiddlewareAdvancedTest(TestCase):
         self.middleware = PrometheusMiddleware()
         self.next_func = MagicMock(return_value="resolved_value")
 
-    @patch("nautobot_app_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
+    @patch("nautobot_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
     def test_query_depth_recorded(self, _mock_settings):
         info = _make_info_with_ast(
             "query DepthTest { devices { location { parent { name } } } }",
@@ -182,7 +182,7 @@ class PrometheusMiddlewareAdvancedTest(TestCase):
         # depth of devices.location.parent.name = 4
         self.assertEqual(after - before, 4)
 
-    @patch("nautobot_app_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
+    @patch("nautobot_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
     def test_query_complexity_recorded(self, _mock_settings):
         info = _make_info_with_ast(
             "query ComplexityTest { devices { id name location { name } } }",
@@ -196,7 +196,7 @@ class PrometheusMiddlewareAdvancedTest(TestCase):
         # devices + id + name + location + name = 5
         self.assertEqual(after - before, 5)
 
-    @patch("nautobot_app_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
+    @patch("nautobot_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
     def test_per_user_metric_authenticated(self, _mock_settings):
         info = _make_info_with_ast("query UserTest { devices { id } }", operation_name="UserTest")
         info.context.user.is_authenticated = True
@@ -213,7 +213,7 @@ class PrometheusMiddlewareAdvancedTest(TestCase):
         )._value.get()
         self.assertEqual(after - before, 1)
 
-    @patch("nautobot_app_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
+    @patch("nautobot_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
     def test_per_user_metric_anonymous(self, _mock_settings):
         info = _make_info_with_ast("query AnonTest { devices { id } }", operation_name="AnonTest")
         info.context.user.is_authenticated = False
@@ -230,7 +230,7 @@ class PrometheusMiddlewareAdvancedTest(TestCase):
         self.assertEqual(after - before, 1)
 
     @patch(
-        "nautobot_app_graphql_observability.middleware._get_app_settings",
+        "nautobot_graphql_observability.middleware._get_app_settings",
         return_value={"track_query_depth": False, "track_query_complexity": False, "track_per_user": False},
     )
     def test_advanced_metrics_disabled(self, _mock_settings):
@@ -254,7 +254,7 @@ class PrometheusMiddlewareAdvancedTest(TestCase):
         )
 
     @patch(
-        "nautobot_app_graphql_observability.middleware._get_app_settings",
+        "nautobot_graphql_observability.middleware._get_app_settings",
         return_value={"track_field_resolution": True},
     )
     def test_field_resolution_tracking(self, _mock_settings):
@@ -271,7 +271,7 @@ class PrometheusMiddlewareAdvancedTest(TestCase):
         self.assertGreater(after, before)
 
     @patch(
-        "nautobot_app_graphql_observability.middleware._get_app_settings",
+        "nautobot_graphql_observability.middleware._get_app_settings",
         return_value={"track_field_resolution": False},
     )
     def test_field_resolution_disabled(self, _mock_settings):

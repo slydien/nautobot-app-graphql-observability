@@ -43,7 +43,7 @@ The `GraphQLQueryLoggingMiddleware` emits structured log entries for every Graph
 - **Query body** (optional)
 - **Query variables** (optional)
 
-Logs are emitted to the `nautobot_app_graphql_observability.graphql_query_log` logger and can be routed to any backend (file, syslog, ELK, etc.) via Django's `LOGGING` configuration.
+Logs are emitted to the `nautobot_graphql_observability.graphql_query_log` logger and can be routed to any backend (file, syslog, ELK, etc.) via Django's `LOGGING` configuration.
 
 ## Audience (User Personas) - Who should use this App?
 

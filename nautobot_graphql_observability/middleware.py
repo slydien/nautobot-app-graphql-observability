@@ -5,7 +5,7 @@ import time
 from graphql import GraphQLResolveInfo
 from graphql.language.ast import FieldNode
 
-from nautobot_app_graphql_observability.metrics import (
+from nautobot_graphql_observability.metrics import (
     graphql_errors_total,
     graphql_field_resolution_duration_seconds,
     graphql_query_complexity,
@@ -13,9 +13,10 @@ from nautobot_app_graphql_observability.metrics import (
     graphql_requests_by_user_total,
     graphql_requests_total,
 )
-from nautobot_app_graphql_observability.utils import (
+from nautobot_graphql_observability.utils import (
     calculate_query_complexity,
     calculate_query_depth,
+    stash_meta_on_request,
 )
 
 # Key used to stash Prometheus metadata on the request for the Django middleware.
@@ -30,7 +31,7 @@ def _get_app_settings():
     """
     from django.conf import settings  # pylint: disable=import-outside-toplevel
 
-    return getattr(settings, "PLUGINS_CONFIG", {}).get("nautobot_app_graphql_observability", {})
+    return getattr(settings, "PLUGINS_CONFIG", {}).get("nautobot_graphql_observability", {})
 
 
 class PrometheusMiddleware:  # pylint: disable=too-few-public-methods
@@ -52,7 +53,7 @@ class PrometheusMiddleware:  # pylint: disable=too-few-public-methods
 
         GRAPHENE = {
             "MIDDLEWARE": [
-                "nautobot_app_graphql_observability.middleware.PrometheusMiddleware",
+                "nautobot_graphql_observability.middleware.PrometheusMiddleware",
             ]
         }
     """
@@ -85,16 +86,15 @@ class PrometheusMiddleware:  # pylint: disable=too-few-public-methods
 
         # Stash labels on the request (only for the first root field) so
         # the Django middleware can record the full-request duration.
+        # For DRF views, info.context is a DRF Request wrapping a WSGIRequest.
+        # The Django middleware sees the WSGIRequest, so stash on both.
         request = info.context
         if not hasattr(request, _REQUEST_ATTR):
-            setattr(
-                request,
-                _REQUEST_ATTR,
-                {
-                    "operation_type": operation_type,
-                    "operation_name": operation_name,
-                },
-            )
+            meta = {
+                "operation_type": operation_type,
+                "operation_name": operation_name,
+            }
+            stash_meta_on_request(request, _REQUEST_ATTR, meta)
 
         try:
             result = next(root, info, **kwargs)

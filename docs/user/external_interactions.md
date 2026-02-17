@@ -55,7 +55,7 @@ Import these rules into your Prometheus or Grafana alerting configuration.
 
 ### Query Log Integration
 
-The logging middleware emits structured log entries to the `nautobot_app_graphql_observability.graphql_query_log` Python logger. These logs can be forwarded to external systems via Django's `LOGGING` configuration:
+The logging middleware emits structured log entries to the `nautobot_graphql_observability.graphql_query_log` Python logger. These logs can be forwarded to external systems via Django's `LOGGING` configuration:
 
 | Target | Handler Class | Notes |
 | ------ | ------------- | ----- |

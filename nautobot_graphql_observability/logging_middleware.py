@@ -5,9 +5,10 @@ import logging
 
 from graphql import GraphQLResolveInfo
 
-from nautobot_app_graphql_observability.middleware import PrometheusMiddleware, _get_app_settings
+from nautobot_graphql_observability.middleware import PrometheusMiddleware, _get_app_settings
+from nautobot_graphql_observability.utils import stash_meta_on_request
 
-LOGGER_NAME = "nautobot_app_graphql_observability.graphql_query_log"
+LOGGER_NAME = "nautobot_graphql_observability.graphql_query_log"
 _LOGGER_CONFIGURED = False
 
 # Key used to stash GraphQL metadata on the request for the Django middleware.
@@ -55,8 +56,8 @@ class GraphQLQueryLoggingMiddleware:  # pylint: disable=too-few-public-methods
 
         GRAPHENE = {
             "MIDDLEWARE": [
-                "nautobot_app_graphql_observability.logging_middleware.GraphQLQueryLoggingMiddleware",
-                "nautobot_app_graphql_observability.middleware.PrometheusMiddleware",
+                "nautobot_graphql_observability.logging_middleware.GraphQLQueryLoggingMiddleware",
+                "nautobot_graphql_observability.middleware.PrometheusMiddleware",
             ]
         }
     """
@@ -81,6 +82,8 @@ class GraphQLQueryLoggingMiddleware:  # pylint: disable=too-few-public-methods
             return next(root, info, **kwargs)
 
         # Stash metadata on the request (only for the first root field).
+        # For DRF views, info.context is a DRF Request wrapping a WSGIRequest.
+        # The Django middleware sees the WSGIRequest, so stash on both.
         request = info.context
         if not hasattr(request, _REQUEST_ATTR):
             meta = {
@@ -96,7 +99,7 @@ class GraphQLQueryLoggingMiddleware:  # pylint: disable=too-few-public-methods
             if config.get("log_query_variables", False):
                 meta["variables"] = _extract_variables(info)
 
-            setattr(request, _REQUEST_ATTR, meta)
+            stash_meta_on_request(request, _REQUEST_ATTR, meta)
 
         try:
             return next(root, info, **kwargs)

@@ -6,7 +6,7 @@ Contributions and extensions are welcome. Please open an issue first to discuss 
 
 To add a new Prometheus metric:
 
-1. Define the metric in `nautobot_app_graphql_observability/metrics.py`:
+1. Define the metric in `nautobot_graphql_observability/metrics.py`:
 
     ```python
     from prometheus_client import Counter
@@ -18,7 +18,7 @@ To add a new Prometheus metric:
     )
     ```
 
-2. Import and record it in the appropriate method of `PrometheusMiddleware` in `nautobot_app_graphql_observability/middleware.py`.
+2. Import and record it in the appropriate method of `PrometheusMiddleware` in `nautobot_graphql_observability/middleware.py`.
 
 3. If the metric should be optional, add a new boolean setting to `NautobotAppGraphqlObservabilityConfig.default_settings` in `__init__.py` and gate the recording behind a config check in the middleware.
 
@@ -36,12 +36,12 @@ The default histogram buckets are defined in `metrics.py`. To customize them for
 
 ## Extending the Logging Middleware
 
-The `GraphQLQueryLoggingMiddleware` in `nautobot_app_graphql_observability/logging_middleware.py` can be extended to add custom fields to log entries. The middleware uses Python's standard `logging` module with the logger name `nautobot_app_graphql_observability.graphql_query_log`.
+The `GraphQLQueryLoggingMiddleware` in `nautobot_graphql_observability/logging_middleware.py` can be extended to add custom fields to log entries. The middleware uses Python's standard `logging` module with the logger name `nautobot_graphql_observability.graphql_query_log`.
 
 To add custom log fields, subclass `GraphQLQueryLoggingMiddleware` and override `_log_query()`:
 
 ```python
-from nautobot_app_graphql_observability.logging_middleware import GraphQLQueryLoggingMiddleware
+from nautobot_graphql_observability.logging_middleware import GraphQLQueryLoggingMiddleware
 
 class CustomLoggingMiddleware(GraphQLQueryLoggingMiddleware):
     @staticmethod

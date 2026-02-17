@@ -53,7 +53,7 @@ Set `query_logging_enabled` to `True` in your `PLUGINS_CONFIG`:
 
 ```python
 PLUGINS_CONFIG = {
-    "nautobot_app_graphql_observability": {
+    "nautobot_graphql_observability": {
         "query_logging_enabled": True,
     }
 }
@@ -63,7 +63,7 @@ Optionally enable `log_query_body` and `log_query_variables` to include the quer
 
 ## Why aren't my query logs appearing?
 
-The logging middleware uses a dedicated logger (`nautobot_app_graphql_observability.graphql_query_log`) that writes to stderr by default. If you have a custom Django `LOGGING` configuration that suppresses loggers not explicitly listed, you may need to add an entry for this logger. See [Routing Logs to External Systems](app_use_cases.md#routing-logs-to-external-systems).
+The logging middleware uses a dedicated logger (`nautobot_graphql_observability.graphql_query_log`) that writes to stderr by default. If you have a custom Django `LOGGING` configuration that suppresses loggers not explicitly listed, you may need to add an entry for this logger. See [Routing Logs to External Systems](app_use_cases.md#routing-logs-to-external-systems).
 
 ## Can I use metrics and logging independently?
 

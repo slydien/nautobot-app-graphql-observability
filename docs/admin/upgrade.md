@@ -9,7 +9,7 @@ This app has no database models and therefore requires no database migrations. T
 1. Update the package:
 
     ```shell
-    pip install --upgrade nautobot-app-graphql-observability
+    pip install --upgrade nautobot-graphql-observability
     ```
 
 2. Run `nautobot-server post_upgrade` to clear caches and collect static files:

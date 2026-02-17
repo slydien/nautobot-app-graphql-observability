@@ -6,13 +6,13 @@ from unittest.mock import MagicMock, patch
 from django.test import TestCase
 from graphql import parse
 
-from nautobot_app_graphql_observability.logging_middleware import (
+from nautobot_graphql_observability.logging_middleware import (
     _REQUEST_ATTR,
     GraphQLQueryLoggingMiddleware,
     _emit_log,
 )
 
-LOGGER_NAME = "nautobot_app_graphql_observability.graphql_query_log"
+LOGGER_NAME = "nautobot_graphql_observability.graphql_query_log"
 
 _LOGGING_ENABLED = {
     "query_logging_enabled": True,
@@ -46,7 +46,7 @@ class GraphQLQueryLoggingMiddlewareTest(TestCase):
         self.next_func = MagicMock(return_value="resolved_value")
 
     @patch(
-        "nautobot_app_graphql_observability.logging_middleware._get_app_settings",
+        "nautobot_graphql_observability.logging_middleware._get_app_settings",
         return_value=_LOGGING_ENABLED,
     )
     def test_root_resolver_stashes_metadata(self, _mock_settings):
@@ -61,7 +61,7 @@ class GraphQLQueryLoggingMiddlewareTest(TestCase):
         self.assertEqual(meta["user"], "testuser")
 
     @patch(
-        "nautobot_app_graphql_observability.logging_middleware._get_app_settings",
+        "nautobot_graphql_observability.logging_middleware._get_app_settings",
         return_value=_LOGGING_ENABLED,
     )
     def test_nested_resolver_skips_stashing(self, _mock_settings):
@@ -74,7 +74,7 @@ class GraphQLQueryLoggingMiddlewareTest(TestCase):
         self.assertFalse(hasattr(info.context, _REQUEST_ATTR))
 
     @patch(
-        "nautobot_app_graphql_observability.logging_middleware._get_app_settings",
+        "nautobot_graphql_observability.logging_middleware._get_app_settings",
         return_value=_LOGGING_ENABLED,
     )
     def test_error_records_error_in_metadata(self, _mock_settings):
@@ -88,7 +88,7 @@ class GraphQLQueryLoggingMiddlewareTest(TestCase):
         self.assertIsInstance(meta["error"], ValueError)
 
     @patch(
-        "nautobot_app_graphql_observability.logging_middleware._get_app_settings",
+        "nautobot_graphql_observability.logging_middleware._get_app_settings",
         return_value={"query_logging_enabled": False},
     )
     def test_logging_disabled_skips_stashing(self, _mock_settings):
@@ -100,7 +100,7 @@ class GraphQLQueryLoggingMiddlewareTest(TestCase):
         self.assertFalse(hasattr(info.context, _REQUEST_ATTR))
 
     @patch(
-        "nautobot_app_graphql_observability.logging_middleware._get_app_settings",
+        "nautobot_graphql_observability.logging_middleware._get_app_settings",
         return_value={**_LOGGING_ENABLED, "log_query_body": True},
     )
     def test_stashes_query_body_when_enabled(self, _mock_settings):
@@ -112,7 +112,7 @@ class GraphQLQueryLoggingMiddlewareTest(TestCase):
         self.assertIn("{ devices { id name } }", meta["query_body"])
 
     @patch(
-        "nautobot_app_graphql_observability.logging_middleware._get_app_settings",
+        "nautobot_graphql_observability.logging_middleware._get_app_settings",
         return_value=_LOGGING_ENABLED,
     )
     def test_no_query_body_when_disabled(self, _mock_settings):
@@ -124,7 +124,7 @@ class GraphQLQueryLoggingMiddlewareTest(TestCase):
         self.assertNotIn("query_body", meta)
 
     @patch(
-        "nautobot_app_graphql_observability.logging_middleware._get_app_settings",
+        "nautobot_graphql_observability.logging_middleware._get_app_settings",
         return_value={**_LOGGING_ENABLED, "log_query_variables": True},
     )
     def test_stashes_variables_when_enabled(self, _mock_settings):
@@ -136,7 +136,7 @@ class GraphQLQueryLoggingMiddlewareTest(TestCase):
         self.assertEqual(meta["variables"], '{"name":"test"}')
 
     @patch(
-        "nautobot_app_graphql_observability.logging_middleware._get_app_settings",
+        "nautobot_graphql_observability.logging_middleware._get_app_settings",
         return_value=_LOGGING_ENABLED,
     )
     def test_anonymous_user(self, _mock_settings):
@@ -148,7 +148,7 @@ class GraphQLQueryLoggingMiddlewareTest(TestCase):
         self.assertEqual(meta["user"], "anonymous")
 
     @patch(
-        "nautobot_app_graphql_observability.logging_middleware._get_app_settings",
+        "nautobot_graphql_observability.logging_middleware._get_app_settings",
         return_value=_LOGGING_ENABLED,
     )
     def test_unnamed_operation_uses_root_fields(self, _mock_settings):

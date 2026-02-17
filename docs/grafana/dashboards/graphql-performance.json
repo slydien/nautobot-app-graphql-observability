@@ -36,7 +36,7 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
-  "description": "Monitors GraphQL query performance, error rates, latency percentiles, query depth/complexity, and per-user activity. Metrics are exported by the nautobot-app-graphql-observability middleware.",
+  "description": "Monitors GraphQL query performance, error rates, latency percentiles, query depth/complexity, and per-user activity. Metrics are exported by the nautobot-graphql-observability middleware.",
   "links": [
     {
       "asDropdown": true,

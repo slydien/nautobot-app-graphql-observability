@@ -65,7 +65,7 @@ To also log every GraphQL query to the console, enable logging in your `nautobot
 
 ```python
 PLUGINS_CONFIG = {
-    "nautobot_app_graphql_observability": {
+    "nautobot_graphql_observability": {
         "query_logging_enabled": True,
         "log_query_body": True,
     }
@@ -75,7 +75,7 @@ PLUGINS_CONFIG = {
 After restarting Nautobot, send a GraphQL query and check the Nautobot logs. You should see entries like:
 
 ```
-14:32:05.123 INFO    nautobot_app_graphql_observability.graphql_query_log : operation_type=query operation_name=GetDevices user=admin duration_ms=42.3 status=success query=query GetDevices { devices { name } }
+14:32:05.123 INFO    nautobot_graphql_observability.graphql_query_log : operation_type=query operation_name=GetDevices user=admin duration_ms=42.3 status=success query=query GetDevices { devices { name } }
 ```
 
 ## What are the next steps?

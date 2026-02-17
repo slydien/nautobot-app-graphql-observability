@@ -1,4 +1,4 @@
-"""Utilities for analyzing GraphQL query AST."""
+"""Utilities for analyzing GraphQL query AST and request handling."""
 
 from graphql.language.ast import (
     FieldNode,
@@ -65,3 +65,22 @@ def calculate_query_complexity(selection_set, fragments=None):
                 count += calculate_query_complexity(fragment.selection_set, fragments)
 
     return count
+
+
+def stash_meta_on_request(request, attr_name, meta):
+    """Stash metadata on the request and its underlying WSGIRequest.
+
+    For DRF views, ``info.context`` is a DRF ``Request`` wrapping a
+    ``WSGIRequest``.  The Django middleware sees the ``WSGIRequest``, so
+    we stash on both to ensure the metadata is accessible regardless of
+    which request object is used.
+
+    Args:
+        request: The request object (DRF Request or WSGIRequest).
+        attr_name: The attribute name to set on the request.
+        meta: The metadata dict to stash.
+    """
+    setattr(request, attr_name, meta)
+    wsgi_request = getattr(request, "_request", None)
+    if wsgi_request is not None:
+        setattr(wsgi_request, attr_name, meta)

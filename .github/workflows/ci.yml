@@ -10,7 +10,7 @@ on: # yamllint disable-line rule:truthy rule:comments
   pull_request: ~
 
 env:
-  APP_NAME: "nautobot-app-graphql-observability"
+  APP_NAME: "nautobot-graphql-observability"
 
 jobs:
   generate-lockfile:

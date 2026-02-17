@@ -80,7 +80,7 @@ Set `query_logging_enabled` to `True` in your `PLUGINS_CONFIG`:
 
 ```python
 PLUGINS_CONFIG = {
-    "nautobot_app_graphql_observability": {
+    "nautobot_graphql_observability": {
         "query_logging_enabled": True,
         "log_query_body": True,
         "log_query_variables": False,
@@ -93,18 +93,18 @@ PLUGINS_CONFIG = {
 Each query produces a structured log line:
 
 ```
-14:32:05.123 INFO    nautobot_app_graphql_observability.graphql_query_log : operation_type=query operation_name=GetDevices user=admin duration_ms=42.3 status=success query=query GetDevices { devices { name } }
+14:32:05.123 INFO    nautobot_graphql_observability.graphql_query_log : operation_type=query operation_name=GetDevices user=admin duration_ms=42.3 status=success query=query GetDevices { devices { name } }
 ```
 
 Failed queries are logged at WARNING level and include the error type:
 
 ```
-14:32:06.456 WARNING nautobot_app_graphql_observability.graphql_query_log : operation_type=query operation_name=BadQuery user=admin duration_ms=5.1 status=error error_type=GraphQLError
+14:32:06.456 WARNING nautobot_graphql_observability.graphql_query_log : operation_type=query operation_name=BadQuery user=admin duration_ms=5.1 status=error error_type=GraphQLError
 ```
 
 ### Routing Logs to External Systems
 
-The logging middleware uses Python's standard `logging` module with the logger name `nautobot_app_graphql_observability.graphql_query_log`. You can route these logs to any backend via Django's `LOGGING` configuration:
+The logging middleware uses Python's standard `logging` module with the logger name `nautobot_graphql_observability.graphql_query_log`. You can route these logs to any backend via Django's `LOGGING` configuration:
 
 ```python
 # nautobot_config.py
@@ -119,7 +119,7 @@ LOGGING = {
         },
     },
     "loggers": {
-        "nautobot_app_graphql_observability.graphql_query_log": {
+        "nautobot_graphql_observability.graphql_query_log": {
             "handlers": ["graphql_file"],
             "level": "INFO",
             "propagate": False,

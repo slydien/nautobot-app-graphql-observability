@@ -3,7 +3,7 @@
 from django.test import TestCase
 from graphql import parse
 
-from nautobot_app_graphql_observability.utils import (
+from nautobot_graphql_observability.utils import (
     calculate_query_complexity,
     calculate_query_depth,
 )

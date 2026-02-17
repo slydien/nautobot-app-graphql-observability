@@ -76,10 +76,8 @@ class NautobotAppGraphqlObservabilityConfig(NautobotAppConfig):
             response = original_post(view_self, request, *args, **kwargs)
             duration = time.monotonic() - start_time
 
-            from nautobot_app_graphql_observability.logging_middleware import (  # pylint: disable=import-outside-toplevel
+            from nautobot_app_graphql_observability.logging_middleware import (  # noqa: I001  # pylint: disable=import-outside-toplevel
                 _REQUEST_ATTR as _LOGGING_ATTR,
-            )
-            from nautobot_app_graphql_observability.logging_middleware import (
                 _emit_log,
             )
             from nautobot_app_graphql_observability.metrics import (  # pylint: disable=import-outside-toplevel

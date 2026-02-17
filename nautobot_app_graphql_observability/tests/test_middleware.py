@@ -10,11 +10,13 @@ from nautobot_app_graphql_observability.metrics import (
     graphql_field_resolution_duration_seconds,
     graphql_query_complexity,
     graphql_query_depth,
-    graphql_request_duration_seconds,
     graphql_requests_by_user_total,
     graphql_requests_total,
 )
-from nautobot_app_graphql_observability.middleware import PrometheusMiddleware
+from nautobot_app_graphql_observability.middleware import (
+    PrometheusMiddleware,
+    _REQUEST_ATTR,
+)
 
 
 def _make_info(operation_type="query", operation_name="TestQuery"):
@@ -25,6 +27,8 @@ def _make_info(operation_type="query", operation_name="TestQuery"):
         info.operation.name.value = operation_name
     else:
         info.operation.name = None
+    # Ensure hasattr(_REQUEST_ATTR) returns False initially.
+    del info.context._graphql_prometheus_meta
     return info
 
 
@@ -43,6 +47,8 @@ def _make_info_with_ast(query_string, operation_name=None):
     info.fragments = fragments
     info.context.user.is_authenticated = True
     info.context.user.username = "testuser"
+    # Ensure hasattr(_REQUEST_ATTR) returns False initially.
+    del info.context._graphql_prometheus_meta
     if operation_name is not None:
         info.operation.name = MagicMock()
         info.operation.name.value = operation_name
@@ -145,13 +151,14 @@ class PrometheusMiddlewareBasicTest(TestCase):
         self.assertEqual(request_after - request_before, 1)
 
     @patch("nautobot_app_graphql_observability.middleware._get_app_settings", return_value=_DEFAULT_CONFIG)
-    def test_duration_histogram_recorded(self, _mock_settings):
-        info = _make_info(operation_type="query", operation_name="SlowQuery")
+    def test_root_resolver_stashes_labels_for_duration(self, _mock_settings):
+        info = _make_info(operation_type="query", operation_name="StashTest")
 
         self.middleware.resolve(self.next_func, None, info)
 
-        count = graphql_request_duration_seconds.labels(operation_type="query", operation_name="SlowQuery")._sum.get()
-        self.assertGreaterEqual(count, 0)
+        meta = getattr(info.context, _REQUEST_ATTR)
+        self.assertEqual(meta["operation_type"], "query")
+        self.assertEqual(meta["operation_name"], "StashTest")
 
 
 class PrometheusMiddlewareAdvancedTest(TestCase):

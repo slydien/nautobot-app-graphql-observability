@@ -19,6 +19,9 @@ from nautobot_app_graphql_observability.utils import (
     calculate_query_depth,
 )
 
+# Key used to stash Prometheus metadata on the request for the Django middleware.
+_REQUEST_ATTR = "_graphql_prometheus_meta"
+
 
 def _get_app_settings():
     """Load the app's plugin settings from Django config.
@@ -34,9 +37,12 @@ def _get_app_settings():
 class PrometheusMiddleware:  # pylint: disable=too-few-public-methods
     """Graphene middleware that instruments GraphQL resolvers with Prometheus metrics.
 
-    Records basic metrics (request count, duration, errors) for all queries at
-    the root resolver level. Optionally records advanced metrics based on app
-    configuration:
+    On root-level resolutions, records counters and advanced metrics immediately
+    (these are not timing-sensitive) and stashes operation labels onto the
+    request so that :class:`PrometheusDjangoMiddleware` can record the duration
+    histogram after the full HTTP response is built.
+
+    Optionally records advanced metrics based on app configuration:
 
     - ``track_query_depth``: Record query nesting depth histogram.
     - ``track_query_complexity``: Record query field count histogram.
@@ -55,7 +61,8 @@ class PrometheusMiddleware:  # pylint: disable=too-few-public-methods
     def resolve(self, next: callable, root: object, info: GraphQLResolveInfo, **kwargs: object) -> object:  # pylint: disable=redefined-builtin
         """Intercept each field resolution and record metrics.
 
-        Root-level resolutions (root is None) record basic and advanced metrics.
+        Root-level resolutions (root is None) record counters and advanced
+        metrics and stash labels for the Django middleware to record duration.
         Nested resolutions optionally record per-field duration when enabled.
 
         Args:
@@ -76,33 +83,40 @@ class PrometheusMiddleware:  # pylint: disable=too-few-public-methods
 
         operation_type = info.operation.operation.value
         operation_name = self._get_operation_name(info)
-        start_time = time.monotonic()
-        status = "success"
+
+        # Stash labels on the request (only for the first root field) so
+        # the Django middleware can record the full-request duration.
+        request = info.context
+        if not hasattr(request, _REQUEST_ATTR):
+            setattr(request, _REQUEST_ATTR, {
+                "operation_type": operation_type,
+                "operation_name": operation_name,
+            })
 
         try:
             result = next(root, info, **kwargs)
             return result
         except Exception as error:
-            status = "error"
             graphql_errors_total.labels(
                 operation_type=operation_type,
                 operation_name=operation_name,
                 error_type=type(error).__name__,
             ).inc()
+            # Mark the error on the stashed metadata so the Django middleware
+            # records the correct status.
+            meta = getattr(request, _REQUEST_ATTR, None)
+            if meta is not None:
+                meta["error"] = True
             raise
         finally:
-            duration = time.monotonic() - start_time
+            # Counters and advanced metrics are not timing-sensitive, record now.
+            status = "error" if getattr(request, _REQUEST_ATTR, {}).get("error") else "success"
 
             graphql_requests_total.labels(
                 operation_type=operation_type,
                 operation_name=operation_name,
                 status=status,
             ).inc()
-
-            graphql_request_duration_seconds.labels(
-                operation_type=operation_type,
-                operation_name=operation_name,
-            ).observe(duration)
 
             self._record_advanced_metrics(info, operation_name, config)
 
@@ -160,3 +174,5 @@ class PrometheusMiddleware:  # pylint: disable=too-few-public-methods
                 if isinstance(selection, FieldNode):
                     root_fields.append(selection.name.value)
         return ",".join(sorted(root_fields)) if root_fields else "anonymous"
+
+

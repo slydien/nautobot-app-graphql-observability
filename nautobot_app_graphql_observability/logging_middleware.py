@@ -11,6 +11,9 @@ from nautobot_app_graphql_observability.middleware import PrometheusMiddleware, 
 LOGGER_NAME = "nautobot_app_graphql_observability.graphql_query_log"
 _LOGGER_CONFIGURED = False
 
+# Key used to stash GraphQL metadata on the request for the Django middleware.
+_REQUEST_ATTR = "_graphql_logging_meta"
+
 
 def _get_logger():
     """Return the query log logger, ensuring it has a handler.
@@ -37,11 +40,11 @@ def _get_logger():
 
 
 class GraphQLQueryLoggingMiddleware:  # pylint: disable=too-few-public-methods
-    """Graphene middleware that logs GraphQL query execution details.
+    """Graphene middleware that captures GraphQL query metadata for logging.
 
-    Logs operation metadata (type, name, user, duration, status) at the root
-    resolver level using Python's ``logging`` module. Users can route these
-    logs to any backend via Django's ``LOGGING`` configuration.
+    On root-level resolutions, stashes operation metadata onto the request so
+    that :class:`GraphQLQueryLoggingDjangoMiddleware` can emit a log entry
+    with the **real** total request duration after the full response is built.
 
     Controlled by app settings:
 
@@ -60,7 +63,7 @@ class GraphQLQueryLoggingMiddleware:  # pylint: disable=too-few-public-methods
     """
 
     def resolve(self, next: callable, root: object, info: GraphQLResolveInfo, **kwargs: object) -> object:  # pylint: disable=redefined-builtin
-        """Intercept root-level resolutions and log query details.
+        """Intercept root-level resolutions and stash metadata on the request.
 
         Args:
             next (callable): Callable to continue the resolution chain.
@@ -78,14 +81,32 @@ class GraphQLQueryLoggingMiddleware:  # pylint: disable=too-few-public-methods
         if not config.get("query_logging_enabled", False):
             return next(root, info, **kwargs)
 
-        start_time = time.monotonic()
+        # Stash metadata on the request (only for the first root field).
+        request = info.context
+        if not hasattr(request, _REQUEST_ATTR):
+            meta = {
+                "operation_type": info.operation.operation.value,
+                "operation_name": PrometheusMiddleware._get_operation_name(info),
+                "user": self._get_user(info),
+                "config": config,
+            }
+
+            if config.get("log_query_body", False):
+                meta["query_body"] = _extract_query_body(info)
+
+            if config.get("log_query_variables", False):
+                meta["variables"] = _extract_variables(info)
+
+            setattr(request, _REQUEST_ATTR, meta)
 
         try:
-            result = next(root, info, **kwargs)
-            self._log_query(config, info, start_time)
-            return result
+            return next(root, info, **kwargs)
         except Exception as error:
-            self._log_query(config, info, start_time, error=error)
+            # Record the error on the stashed metadata so the Django
+            # middleware can log it.
+            meta = getattr(request, _REQUEST_ATTR, None)
+            if meta is not None:
+                meta["error"] = error
             raise
 
     @staticmethod
@@ -97,43 +118,38 @@ class GraphQLQueryLoggingMiddleware:  # pylint: disable=too-few-public-methods
                 return request.user.username
         return "anonymous"
 
-    @staticmethod
-    def _log_query(config, info, start_time, error=None):
-        """Emit a structured log entry for the GraphQL query."""
-        operation_type = info.operation.operation.value
-        operation_name = PrometheusMiddleware._get_operation_name(info)
-        user = GraphQLQueryLoggingMiddleware._get_user(info)
-        duration_ms = (time.monotonic() - start_time) * 1000
-        status = "error" if error else "success"
 
-        parts = [
-            f"operation_type={operation_type}",
-            f"operation_name={operation_name}",
-            f"user={user}",
-            f"duration_ms={duration_ms:.1f}",
-            f"status={status}",
-        ]
+def _emit_log(meta, duration_ms):
+    """Build and emit the structured log message."""
+    error = meta.get("error")
+    status = "error" if error else "success"
 
-        if error:
-            parts.append(f"error_type={type(error).__name__}")
+    parts = [
+        f"operation_type={meta['operation_type']}",
+        f"operation_name={meta['operation_name']}",
+        f"user={meta['user']}",
+        f"duration_ms={duration_ms:.1f}",
+        f"status={status}",
+    ]
 
-        if config.get("log_query_body", False):
-            query_text = _extract_query_body(info)
-            if query_text:
-                parts.append(f"query={query_text}")
+    if error:
+        parts.append(f"error_type={type(error).__name__}")
 
-        if config.get("log_query_variables", False):
-            variables = _extract_variables(info)
-            if variables:
-                parts.append(f"variables={variables}")
+    query_body = meta.get("query_body")
+    if query_body:
+        parts.append(f"query={query_body}")
 
-        message = " ".join(parts)
-        log = _get_logger()
+    variables = meta.get("variables")
+    if variables:
+        parts.append(f"variables={variables}")
 
-        if error:
-            log.warning(message)
-        else:
-            log.info(message)
+    message = " ".join(parts)
+    log = _get_logger()
+
+    if error:
+        log.warning(message)
+    else:
+        log.info(message)
 
 
 def _extract_query_body(info):

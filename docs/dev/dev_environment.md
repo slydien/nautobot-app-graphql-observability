@@ -20,7 +20,7 @@ The [Invoke](http://www.pyinvoke.org/) library is used to provide some helper co
 - `compose_dir`: the full path to a directory containing the project compose files
 - `compose_files`: a list of compose files applied in order (see [Multiple Compose files](https://docs.docker.com/compose/extends/#multiple-compose-files) for more information)
 
-Using **Invoke** these configuration options can be overridden using [several methods](https://docs.pyinvoke.org/en/stable/concepts/configuration.html). Perhaps the simplest is setting an environment variable `INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_VARIABLE_NAME` where `VARIABLE_NAME` is the variable you are trying to override. The only exception is `compose_files`, because it is a list it must be overridden in a YAML file. There is an example `invoke.yml` (`invoke.example.yml`) in this directory which can be used as a starting point.
+Using **Invoke** these configuration options can be overridden using [several methods](https://docs.pyinvoke.org/en/stable/concepts/configuration.html). Perhaps the simplest is setting an environment variable `INVOKE_NAUTOBOT_GRAPHQL_OBSERVABILITY_VARIABLE_NAME` where `VARIABLE_NAME` is the variable you are trying to override. The only exception is `compose_files`, because it is a list it must be overridden in a YAML file. There is an example `invoke.yml` (`invoke.example.yml`) in this directory which can be used as a starting point.
 
 ### Docker Development Environment
 
@@ -398,7 +398,7 @@ namespace.configure(
 )
 ```
 
-Or set the `INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_PYTHON_VER` variable.
+Or set the `INVOKE_NAUTOBOT_GRAPHQL_OBSERVABILITY_PYTHON_VER` variable.
 
 ### Updating Nautobot Version
 
@@ -417,7 +417,7 @@ namespace.configure(
 )
 ```
 
-Or set the `INVOKE_NAUTOBOT_APP_GRAPHQL_OBSERVABILITY_NAUTOBOT_VER` variable.
+Or set the `INVOKE_NAUTOBOT_GRAPHQL_OBSERVABILITY_NAUTOBOT_VER` variable.
 
 ## Other Miscellaneous Commands To Know
 

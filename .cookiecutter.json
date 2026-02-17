@@ -8,7 +8,7 @@
         "verbose_name": "Nautobot App GraphQL Observability",
         "app_slug": "nautobot-graphql-observability",
         "project_slug": "nautobot-graphql-observability",
-        "repo_url": "https://github.com/slydien/nautobot-graphql-observability",
+        "repo_url": "https://github.com/slydien/nautobot-app-graphql-observability",
         "base_url": "nautobot-graphql-observability",
         "camel_name": "NautobotAppGraphqlObservability",
         "project_short_description": "Nautobot App GraphQL Observability",

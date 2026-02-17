@@ -4,7 +4,7 @@ edit_uri: "edit/main/docs"
 site_dir: "nautobot_graphql_observability/static/nautobot_graphql_observability/docs"
 site_name: "Nautobot App GraphQL Observability Documentation"
 site_url: "https://docs.nautobot.com/projects/nautobot-graphql-observability/en/latest/"
-repo_url: "https://github.com/slydien/nautobot-graphql-observability"
+repo_url: "https://github.com/slydien/nautobot-app-graphql-observability"
 copyright: "Copyright &copy; The Authors"
 theme:
   name: "material"

@@ -5,8 +5,8 @@ description = "Nautobot App GraphQL Observability"
 authors = ["Lydien SANDANASAMY <dev@slydien.com>"]
 license = "Apache-2.0"
 readme = "README.md"
-homepage = "https://github.com/slydien/nautobot-graphql-observability"
-repository = "https://github.com/slydien/nautobot-graphql-observability"
+homepage = "https://github.com/slydien/nautobot-app-graphql-observability"
+repository = "https://github.com/slydien/nautobot-app-graphql-observability"
 documentation = "https://docs.nautobot.com/projects/nautobot-graphql-observability/en/latest/"
 keywords = ["nautobot", "nautobot-app", "nautobot-plugin"]
 classifiers = [
@@ -172,7 +172,7 @@ directory = "changes"
 filename = "docs/admin/release_notes/version_X.Y.md"
 template = "development/towncrier_template.j2"
 start_string = "<!-- towncrier release notes start -->"
-issue_format = "[#{issue}](https://github.com/slydien/nautobot-graphql-observability/issues/{issue})"
+issue_format = "[#{issue}](https://github.com/slydien/nautobot-app-graphql-observability/issues/{issue})"
 
 [[tool.towncrier.type]]
 directory = "breaking"

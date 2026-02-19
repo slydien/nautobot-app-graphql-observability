@@ -711,6 +711,39 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#celery-workers-and-structured-json-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Celery Workers and Structured JSON Logging
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Celery Workers and Structured JSON Logging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-celery-workers-do-not-use-structlog-by-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why Celery workers do not use structlog by default
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enabling-json-logging-for-celery-workers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enabling JSON logging for Celery workers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1299,6 +1332,39 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#celery-workers-and-structured-json-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Celery Workers and Structured JSON Logging
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Celery Workers and Structured JSON Logging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-celery-workers-do-not-use-structlog-by-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why Celery workers do not use structlog by default
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enabling-json-logging-for-celery-workers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enabling JSON logging for Celery workers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1472,6 +1538,65 @@
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$PROMETHEUS_MULTIPROC_DIR</span><span class="s2">&quot;</span>
 </code></pre></div>
 <p>Nautobot's default <code>/metrics/</code> endpoint will automatically aggregate metrics from all worker processes when this variable is set.</p>
+<h2 id="celery-workers-and-structured-json-logging">Celery Workers and Structured JSON Logging<a class="headerlink" href="#celery-workers-and-structured-json-logging" title="Permanent link">&para;</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This section is only relevant if you use Nautobot's structlog JSON logging (configured via <code>setup_structlog_logging()</code>) <strong>and</strong> you want Celery worker logs to also emit JSON — for example to feed them into a log aggregation pipeline (ELK, Loki, etc.).</p>
+</div>
+<h3 id="why-celery-workers-do-not-use-structlog-by-default">Why Celery workers do not use structlog by default<a class="headerlink" href="#why-celery-workers-do-not-use-structlog-by-default" title="Permanent link">&para;</a></h3>
+<p>Although Celery workers load the same <code>nautobot_config.py</code> as the web process — and therefore run <code>setup_structlog_logging()</code> — Celery <strong>overrides the Python logging configuration</strong> after Django's setup runs. This happens in two places:</p>
+<ol>
+<li><strong>Main worker process</strong> — Celery calls its own <code>setup_logging</code> routine, which replaces the root logger's handler and formatter with Celery's <code>[timestamp: LEVEL/ProcessName]</code> format.</li>
+<li><strong>Prefork child processes</strong> — Each forked task-runner process re-initialises the <code>celery.task</code> logger with its own handler (<code>propagate=False</code>), bypassing the root logger entirely.</li>
+</ol>
+<p>The result is that all Celery log output — including Django application-level messages emitted inside tasks — uses Celery's plain-text format regardless of what structlog configured.</p>
+<h3 id="enabling-json-logging-for-celery-workers">Enabling JSON logging for Celery workers<a class="headerlink" href="#enabling-json-logging-for-celery-workers" title="Permanent link">&para;</a></h3>
+<p>To make Celery workers emit structlog JSON, add the following three additions to your <code>nautobot_config.py</code>.  They work together: the first stops the main-process hijack, the second takes ownership of the <code>setup_logging</code> event so Celery never applies its own format, and the third re-applies structlog in each forked child and clears the task logger's private handler.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># nautobot_config.py</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># 1. Prevent Celery from hijacking the root logger in the main worker process.</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">CELERY_WORKER_HIJACK_ROOT_LOGGER</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># 2 &amp; 3. Re-apply structlog in both the main process and each prefork child.</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">celery.signals</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_logging</span><span class="p">,</span> <span class="n">worker_process_init</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="k">def</span><span class="w"> </span><span class="nf">_apply_structlog</span><span class="p">():</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    <span class="n">setup_structlog_logging</span><span class="p">(</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>        <span class="n">LOGGING</span><span class="p">,</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>        <span class="n">INSTALLED_APPS</span><span class="p">,</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>        <span class="n">MIDDLEWARE</span><span class="p">,</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>        <span class="n">log_level</span><span class="o">=</span><span class="n">LOG_LEVEL</span><span class="p">,</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>        <span class="n">plain_format</span><span class="o">=</span><span class="n">DEBUG</span><span class="p">,</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>    <span class="p">)</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="nd">@setup_logging</span><span class="o">.</span><span class="n">connect</span>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="k">def</span><span class="w"> </span><span class="nf">_setup_logging_main_process</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>    <span class="n">_apply_structlog</span><span class="p">()</span>
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a><span class="nd">@worker_process_init</span><span class="o">.</span><span class="n">connect</span>
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a><span class="k">def</span><span class="w"> </span><span class="nf">_setup_structlog_in_worker</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>    <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a>
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a>    <span class="n">_apply_structlog</span><span class="p">()</span>
+<a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a>    <span class="c1"># Celery registers its own handler on celery.task (propagate=False) after</span>
+<a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a>    <span class="c1"># the fork. Clear it so task log records reach the root logger and get</span>
+<a id="__codelineno-6-32" name="__codelineno-6-32" href="#__codelineno-6-32"></a>    <span class="c1"># formatted by structlog.</span>
+<a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a>    <span class="n">celery_task_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;celery.task&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a>    <span class="n">celery_task_log</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+<a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a>    <span class="n">celery_task_log</span><span class="o">.</span><span class="n">propagate</span> <span class="o">=</span> <span class="kc">True</span>
+</code></pre></div>
+<p>With these additions, a Celery job execution produces output like:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span><span class="nt">&quot;event&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Task nautobot.extras.jobs.run_job[...] received&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;info&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;logger&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;celery.worker.strategy&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-19T09:46:05.850656Z&quot;</span><span class="p">}</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="p">{</span><span class="nt">&quot;event&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Running job&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;info&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;logger&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nautobot.core.jobs.groups&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-19T09:46:05.862450Z&quot;</span><span class="p">}</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="p">{</span><span class="nt">&quot;event&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Job completed&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;success&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;logger&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nautobot.core.jobs.groups&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-19T09:46:05.865676Z&quot;</span><span class="p">}</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>These changes have no effect on the GraphQL metrics or query logging features of this app. The Graphene middlewares only run during HTTP request handling (in the web process); Celery workers do not handle GraphQL requests.</p>
+</div>
 
 
 

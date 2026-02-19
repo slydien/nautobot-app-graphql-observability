@@ -73,6 +73,14 @@ Yes. The two middlewares are independent:
 - Set `graphql_metrics_enabled: False` and `query_logging_enabled: True` for logging only.
 - Enable both for full observability.
 
+## Do Celery workers emit structured JSON logs?
+
+Not by default. Even though Celery workers load the same `nautobot_config.py` as the web process, Celery overrides the Python logging configuration after Django's setup runs — both in the main worker process and in each prefork child process. As a result, all Celery log output uses Celery's own plain-text format (`[timestamp: LEVEL/ProcessName] message`) regardless of what structlog configured.
+
+This does **not** affect the GraphQL metrics or query logging features of this app, which only run in the web process during HTTP request handling.
+
+If you want Celery workers to also emit structlog JSON (e.g. for log aggregation pipelines), see [Celery Workers and Structured JSON Logging](../admin/install.md#celery-workers-and-structured-json-logging) in the installation guide.
+
 ## Can I use this app without Nautobot?
 
 The `PrometheusMiddleware` and `GraphQLQueryLoggingMiddleware` classes are standard Graphene middlewares. While this Nautobot app handles the automatic setup and configuration, the middlewares themselves could be used in any Graphene-based project by manually adding them to your `GRAPHENE["MIDDLEWARE"]` setting.

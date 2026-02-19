@@ -103,3 +103,70 @@ mkdir -p "$PROMETHEUS_MULTIPROC_DIR"
 ```
 
 Nautobot's default `/metrics/` endpoint will automatically aggregate metrics from all worker processes when this variable is set.
+
+## Celery Workers and Structured JSON Logging
+
+!!! note
+    This section is only relevant if you use Nautobot's structlog JSON logging (configured via `setup_structlog_logging()`) **and** you want Celery worker logs to also emit JSON — for example to feed them into a log aggregation pipeline (ELK, Loki, etc.).
+
+### Why Celery workers do not use structlog by default
+
+Although Celery workers load the same `nautobot_config.py` as the web process — and therefore run `setup_structlog_logging()` — Celery **overrides the Python logging configuration** after Django's setup runs. This happens in two places:
+
+1. **Main worker process** — Celery calls its own `setup_logging` routine, which replaces the root logger's handler and formatter with Celery's `[timestamp: LEVEL/ProcessName]` format.
+2. **Prefork child processes** — Each forked task-runner process re-initialises the `celery.task` logger with its own handler (`propagate=False`), bypassing the root logger entirely.
+
+The result is that all Celery log output — including Django application-level messages emitted inside tasks — uses Celery's plain-text format regardless of what structlog configured.
+
+### Enabling JSON logging for Celery workers
+
+To make Celery workers emit structlog JSON, add the following three additions to your `nautobot_config.py`.  They work together: the first stops the main-process hijack, the second takes ownership of the `setup_logging` event so Celery never applies its own format, and the third re-applies structlog in each forked child and clears the task logger's private handler.
+
+```python
+# nautobot_config.py
+
+# 1. Prevent Celery from hijacking the root logger in the main worker process.
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+
+# 2 & 3. Re-apply structlog in both the main process and each prefork child.
+from celery.signals import setup_logging, worker_process_init
+
+
+def _apply_structlog():
+    setup_structlog_logging(
+        LOGGING,
+        INSTALLED_APPS,
+        MIDDLEWARE,
+        log_level=LOG_LEVEL,
+        plain_format=DEBUG,
+    )
+
+
+@setup_logging.connect
+def _setup_logging_main_process(**kwargs):
+    _apply_structlog()
+
+
+@worker_process_init.connect
+def _setup_structlog_in_worker(**kwargs):
+    import logging
+
+    _apply_structlog()
+    # Celery registers its own handler on celery.task (propagate=False) after
+    # the fork. Clear it so task log records reach the root logger and get
+    # formatted by structlog.
+    celery_task_log = logging.getLogger("celery.task")
+    celery_task_log.handlers.clear()
+    celery_task_log.propagate = True
+```
+
+With these additions, a Celery job execution produces output like:
+
+```json
+{"event": "Task nautobot.extras.jobs.run_job[...] received", "level": "info", "logger": "celery.worker.strategy", "timestamp": "2026-02-19T09:46:05.850656Z"}
+{"event": "Running job", "level": "info", "logger": "nautobot.core.jobs.groups", "timestamp": "2026-02-19T09:46:05.862450Z"}
+{"event": "Job completed", "level": "success", "logger": "nautobot.core.jobs.groups", "timestamp": "2026-02-19T09:46:05.865676Z"}
+```
+
+!!! warning
+    These changes have no effect on the GraphQL metrics or query logging features of this app. The Graphene middlewares only run during HTTP request handling (in the web process); Celery workers do not handle GraphQL requests.

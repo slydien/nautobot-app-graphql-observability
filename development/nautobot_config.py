@@ -96,6 +96,55 @@ if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
 # environment variables. By default they use `CACHES["default"]["LOCATION"]`.
 #
 
+# Prevent Celery from hijacking the root logger so that structlog's JSON
+# formatter (configured below) stays in effect for all log records emitted
+# by Celery workers.
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+
+# Take full ownership of logging in Celery workers so that structlog's JSON
+# formatter is used everywhere — both in the main process and in each prefork
+# child process.
+#
+# • setup_logging  – fires in the main worker process; returning without error
+#   tells Celery we handled it, so it skips its own root-logger configuration.
+# • worker_process_init – fires in each forked child; we re-apply structlog
+#   and then clear the celery.task logger's own handler (which Celery adds
+#   after the fork and which has propagate=False, bypassing the root logger).
+from celery.signals import setup_logging, worker_process_init  # noqa: E402
+
+
+def _apply_structlog():
+    """(Re-)configure structlog logging — safe to call multiple times."""
+    setup_structlog_logging(
+        LOGGING,
+        INSTALLED_APPS,  # noqa: F405
+        MIDDLEWARE,  # noqa: F405
+        log_level=LOG_LEVEL,
+        plain_format=DEBUG,
+    )
+    if "formatters" in LOGGING:
+        _fmt = LOGGING["formatters"]["default_formatter"]
+        if structlog.stdlib.ExtraAdder not in [type(p) for p in _fmt.get("foreign_pre_chain", ())]:
+            _fmt["foreign_pre_chain"] = (*_fmt["foreign_pre_chain"], structlog.stdlib.ExtraAdder())
+
+
+@setup_logging.connect
+def _setup_logging_main_process(**kwargs):
+    _apply_structlog()
+
+
+@worker_process_init.connect
+def _setup_structlog_in_worker(**kwargs):
+    import logging  # noqa: PLC0415
+
+    _apply_structlog()
+    # Celery registers its own handler on celery.task (with propagate=False)
+    # after the fork.  Clear it so task log records flow through the root
+    # logger and get formatted by structlog.
+    celery_task_log = logging.getLogger("celery.task")
+    celery_task_log.handlers.clear()
+    celery_task_log.propagate = True
+
 #
 # Logging
 #

@@ -1,14 +1,16 @@
 ---
 name: 🐛 Bug Report
-about: Report a reproducible bug in the current release of nautobot-graphql-observability
+about: Report a reproducible bug in graphene-django-observability
 labels:
   - "type: bug"
 ---
 
 ### Environment
-* Python version:  <!-- Example: 3.11.4 -->
-* Nautobot version:  <!-- Example: 3.0.0 -->
-* nautobot-graphql-observability version:  <!-- Example: 1.0.0 -->
+
+* Python version:  <!-- e.g. 3.12.1 -->
+* Django version:  <!-- e.g. 4.2.0 -->
+* graphene-django version:  <!-- e.g. 3.2.1 -->
+* graphene-django-observability version:  <!-- e.g. 1.0.0 -->
 
 <!-- What did you expect to happen? -->
 ### Expected Behavior

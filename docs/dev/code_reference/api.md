@@ -1,5 +1,5 @@
 # Views and URL Configuration
 
-::: nautobot_graphql_observability.views
+::: graphene_django_observability.views
 
-::: nautobot_graphql_observability.urls
+::: graphene_django_observability.urls

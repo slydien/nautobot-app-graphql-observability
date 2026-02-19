@@ -8,21 +8,21 @@ This document describes external dependencies and prerequisites for this App to 
 
 #### Prometheus Scraping
 
-The app registers its metrics in the default `prometheus_client` registry. They are automatically included in Nautobot's default `/metrics/` endpoint (served by `PrometheusMetricsMiddleware`).
+The app registers its metrics in the default `prometheus_client` registry. They are served by the built-in `/metrics/` endpoint (provided by `graphene_django_observability.urls`).
 
 - **URL**: `/metrics/`
 - **Format**: Standard Prometheus text exposition format
-- **Authentication**: None required (bypasses DRF)
+- **Authentication**: None required by default
 
 Add this to your Prometheus configuration:
 
 ```yaml
 scrape_configs:
-  - job_name: "nautobot-graphql"
+  - job_name: "django-graphql"
     metrics_path: "/metrics/"
     scrape_interval: 15s
     static_configs:
-      - targets: ["nautobot-host:8080"]
+      - targets: ["your-django-app:8080"]
 ```
 
 ### Grafana Dashboards
@@ -32,7 +32,6 @@ The repository includes pre-built Grafana dashboard templates in the `docs/grafa
 | Dashboard | File | Description |
 | --------- | ---- | ----------- |
 | GraphQL Performance | `graphql-performance.json` | Query duration percentiles, request rates, error rates, depth and complexity distributions. |
-| Nautobot HTTP Overview | `nautobot-http-overview.json` | HTTP-level metrics for the Nautobot instance. |
 | System Health | `system-health.json` | Process-level metrics (CPU, memory, open file descriptors). |
 | Database and Cache | `database-and-cache.json` | Database connection pool and cache hit/miss metrics. |
 
@@ -45,7 +44,7 @@ To import a dashboard:
 
 ### Alerting Rules
 
-An example Alertmanager rule file is provided at `docs/grafana/alerts/nautobot-alert-rules.yaml`. It includes rules for:
+An example Alertmanager rule file is provided at `docs/grafana/alerts/graphql-alert-rules.yaml`. It includes rules for:
 
 - High GraphQL error rates
 - Slow query duration thresholds
@@ -55,7 +54,7 @@ Import these rules into your Prometheus or Grafana alerting configuration.
 
 ### Query Log Integration
 
-The logging middleware emits structured log entries to the `nautobot_graphql_observability.graphql_query_log` Python logger. These logs can be forwarded to external systems via Django's `LOGGING` configuration:
+The logging middleware emits structured log entries to the `graphene_django_observability.graphql_query_log` Python logger. These logs can be forwarded to external systems via Django's `LOGGING` configuration:
 
 | Target | Handler Class | Notes |
 | ------ | ------------- | ----- |
@@ -66,6 +65,6 @@ The logging middleware emits structured log entries to the `nautobot_graphql_obs
 
 See [Query Logging](app_use_cases.md#query-logging) for configuration examples.
 
-## Nautobot REST API Endpoints
+## REST API Endpoints
 
-This app does not add any REST API endpoints. All metrics are available at Nautobot's default `/metrics/` endpoint.
+This app does not add any REST API endpoints. All metrics are available at the `/metrics/` endpoint configured in your URL configuration.

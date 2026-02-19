@@ -76,21 +76,19 @@ The app includes a separate logging middleware that emits structured log entries
 
 ### Enabling Query Logging
 
-Set `query_logging_enabled` to `True` in your `PLUGINS_CONFIG`:
+Set `query_logging_enabled` to `True` in your `GRAPHENE_OBSERVABILITY` settings:
 
 ```python
-PLUGINS_CONFIG = {
-    "nautobot_graphql_observability": {
-        "query_logging_enabled": True,
-        "log_query_body": True,
-        "log_query_variables": False,
-    }
+GRAPHENE_OBSERVABILITY = {
+    "query_logging_enabled": True,
+    "log_query_body": True,
+    "log_query_variables": False,
 }
 ```
 
 ### Log Output Format
 
-The logging middleware emits structured records using Python's standard `logging` module under the logger name `nautobot_graphql_observability.graphql_query_log`. Each record carries the following fields as `LogRecord` attributes (via `extra`):
+The logging middleware emits structured records using Python's standard `logging` module under the logger name `graphene_django_observability.graphql_query_log`. Each record carries the following fields as `LogRecord` attributes (via `extra`):
 
 | Field | Type | Description |
 | ----- | ---- | ----------- |
@@ -106,42 +104,64 @@ The logging middleware emits structured records using Python's standard `logging
 
 ### Structured JSON Logging with structlog
 
-For production deployments sending logs to aggregation systems (Loki, Elasticsearch, Splunk, etc.), Nautobot's built-in `setup_structlog_logging` helper can be used to emit all log output as JSON. The query log fields will appear as top-level JSON keys.
+For production deployments sending logs to aggregation systems (Loki, Elasticsearch, Splunk, etc.), you can use `structlog` with `django-structlog` to emit all log output as JSON. The query log fields will appear as top-level JSON keys.
 
-Add the following to your `nautobot_config.py`:
+Install the optional dependencies:
+
+```
+pip install structlog django-structlog
+```
+
+Add the following to your `settings.py`:
 
 ```python
 import structlog
-from nautobot.core.settings_funcs import setup_structlog_logging
 
-# Declare only the loggers that need explicit configuration:
-#   - django and nautobot are already defined in nautobot.core.settings.
-#   - django.request is not; list it so disable_existing_loggers=True doesn't silence it.
-#   - nautobot_graphql_observability.graphql_query_log must be listed directly because
-#     the logging middleware always sets propagate=False, so the record never reaches
-#     the root logger and needs a handler attached to this exact logger name.
+INSTALLED_APPS = [
+    ...
+    "django_structlog",
+]
+
+MIDDLEWARE = [
+    "django_structlog.middlewares.RequestMiddleware",
+    ...
+]
+
 LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": structlog.stdlib.ProcessorFormatter,
+            "processors": [
+                structlog.stdlib.ExtraAdder(),
+                structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                structlog.processors.JSONRenderer(),
+            ],
+            "foreign_pre_chain": [
+                structlog.stdlib.add_log_level,
+                structlog.stdlib.add_logger_name,
+                structlog.processors.TimeStamper(fmt="iso"),
+            ],
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+        },
+    },
     "loggers": {
-        "django.request": {"level": "INFO"},
-        "nautobot_graphql_observability.graphql_query_log": {"level": "INFO"},
+        # graphene_django_observability.graphql_query_log must be listed directly
+        # because the logging middleware sets propagate=False so records never
+        # reach the root logger.
+        "graphene_django_observability.graphql_query_log": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
 }
-
-setup_structlog_logging(
-    LOGGING,
-    INSTALLED_APPS,
-    MIDDLEWARE,
-    log_level="INFO",
-    plain_format=False,  # False → JSONRenderer; True → ConsoleRenderer (human-readable)
-)
-
-# setup_structlog_logging overwrites the formatter; append ExtraAdder afterwards so that
-# the extra fields (operation_type, operation_name, user, …) are promoted from the
-# LogRecord into top-level JSON keys instead of being invisible in the event string.
-# In test mode setup_structlog_logging returns early without creating formatters, so guard.
-if "formatters" in LOGGING:
-    _fmt = LOGGING["formatters"]["default_formatter"]
-    _fmt["foreign_pre_chain"] = (*_fmt["foreign_pre_chain"], structlog.stdlib.ExtraAdder())
 ```
 
 Each query log entry will be emitted as a single JSON object:
@@ -150,7 +170,7 @@ Each query log entry will be emitted as a single JSON object:
 {
   "event": "graphql_query",
   "level": "info",
-  "logger": "nautobot_graphql_observability.graphql_query_log",
+  "logger": "graphene_django_observability.graphql_query_log",
   "timestamp": "2026-02-19T08:16:31.818110Z",
   "operation_type": "query",
   "operation_name": "GetDevices",
@@ -159,23 +179,19 @@ Each query log entry will be emitted as a single JSON object:
   "status": "success",
   "query": "query GetDevices { devices { name } }",
   "ip": "192.168.148.1",
-  "request_id": "0e2936fc-7989-4fcb-a63a-d0dd4d6bcea7",
-  "user_id": null
+  "request_id": "0e2936fc-7989-4fcb-a63a-d0dd4d6bcea7"
 }
 ```
 
 !!! note
-    `ip`, `request_id`, and `user_id` are injected automatically by `django_structlog.middlewares.RequestMiddleware`, which `setup_structlog_logging` adds to `MIDDLEWARE`.
-
-!!! note
-    `setup_structlog_logging` also configures the `nautobot` and `django` loggers (already present in Nautobot's base settings) with the same JSON formatter, so all Nautobot and Django log output is consistently structured.
+    `ip` and `request_id` are injected automatically by `django_structlog.middlewares.RequestMiddleware`.
 
 ### Routing Logs to External Systems
 
 If you are not using structlog, the logging middleware uses Python's standard `logging` module and can be routed to any backend via Django's `LOGGING` configuration:
 
 ```python
-# nautobot_config.py
+# settings.py
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -183,11 +199,11 @@ LOGGING = {
         "graphql_file": {
             "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": "/var/log/nautobot/graphql_queries.log",
+            "filename": "/var/log/app/graphql_queries.log",
         },
     },
     "loggers": {
-        "nautobot_graphql_observability.graphql_query_log": {
+        "graphene_django_observability.graphql_query_log": {
             "handlers": ["graphql_file"],
             "level": "INFO",
             "propagate": False,

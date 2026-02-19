@@ -1,7 +1,11 @@
 # Compatibility Matrix
 
-Changes to the support of upstream Nautobot versions will be announced via the release notes for each app version. Users are advised to upgrade to the latest compatible version of this app for their Nautobot release.
+| graphene-django-observability | Python | Django | graphene-django |
+|-------------------------------|--------|--------|-----------------|
+| 1.x                           | 3.10, 3.11, 3.12, 3.13 | 3.2+ | 3.0+ |
 
-| Nautobot App Prometheus GraphQL Version | Nautobot First Support Version | Nautobot Last Support Version | Python Versions |
-| --------------------------------------- | ------------------------------ | ----------------------------- | --------------- |
-| 1.0.x                                   | 3.0.0                          | 3.x                           | 3.10, 3.11, 3.12, 3.13 |
+## Deprecation Policy
+
+- Minor releases (`1.x`) may add new settings with backwards-compatible defaults.
+- Major releases may remove deprecated settings or change metric label schemas.
+- Dropped Python or Django versions are announced at least one minor release in advance.

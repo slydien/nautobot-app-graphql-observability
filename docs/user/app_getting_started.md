@@ -1,32 +1,71 @@
-# Getting Started with the App
+# Getting Started
 
-This document provides a step-by-step tutorial on how to get the App going and how to use it.
+This guide walks you through installing `graphene-django-observability` and sending your first instrumented GraphQL query.
 
-## Install the App
+## Prerequisites
 
-To install the App, please follow the instructions detailed in the [Installation Guide](../admin/install.md).
+- A working Django project with [graphene-django](https://docs.graphene-python.org/projects/django/) installed and a GraphQL schema configured.
+- Prometheus (optional, but needed to actually scrape metrics).
 
-## First Steps with the App
-
-Once the app is installed and Nautobot has been restarted, metrics collection begins automatically. Here is how to verify it is working:
-
-### 1. Send a GraphQL Query
-
-Use the Nautobot GraphQL API to run a query. You can use the GraphiQL interface at `/graphql/` or send a request via `curl`:
+## Step 1 — Install the package
 
 ```shell
-curl -X POST http://localhost:8080/api/graphql/ \
-  -H "Authorization: Token $NAUTOBOT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "query GetDevices { devices { name } }"}'
+pip install graphene-django-observability
 ```
 
-### 2. Check the Metrics Endpoint
+## Step 2 — Configure Django
 
-Browse to or query Nautobot's default Prometheus metrics endpoint:
+Add the following to your `settings.py`:
+
+```python
+INSTALLED_APPS = [
+    ...
+    "graphene_django_observability",
+]
+
+MIDDLEWARE = [
+    ...
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "graphene_django_observability.django_middleware.GraphQLObservabilityDjangoMiddleware",
+]
+
+GRAPHENE = {
+    "SCHEMA": "myapp.schema.schema",   # your existing schema path
+    "MIDDLEWARE": [
+        "graphene_django_observability.middleware.PrometheusMiddleware",
+    ],
+}
+```
+
+## Step 3 — Expose the metrics endpoint
+
+Add the URL pattern to your `urls.py`:
+
+```python
+from django.urls import include, path
+
+urlpatterns = [
+    ...
+    path("graphql-observability/", include("graphene_django_observability.urls")),
+]
+```
+
+Prometheus metrics are now available at `http://localhost:8000/graphql-observability/metrics/`.
+
+## Step 4 — Send a GraphQL query
+
+With your Django development server running (`python manage.py runserver`), send a query:
 
 ```shell
-curl http://localhost:8080/metrics/
+curl -X POST http://localhost:8000/graphql/ \
+  -H "Content-Type: application/json" \
+  -d '{"query": "query GetUsers { users { id username } }"}'
+```
+
+## Step 5 — Check the metrics
+
+```shell
+curl http://localhost:8000/graphql-observability/metrics/ | grep graphql
 ```
 
 You should see output similar to:
@@ -34,64 +73,55 @@ You should see output similar to:
 ```
 # HELP graphql_requests_total Total number of GraphQL requests
 # TYPE graphql_requests_total counter
-graphql_requests_total{operation_name="GetDevices",operation_type="query",status="success"} 1.0
-
+graphql_requests_total{operation_name="GetUsers",operation_type="query",status="success"} 1.0
 # HELP graphql_request_duration_seconds Duration of GraphQL request execution in seconds
 # TYPE graphql_request_duration_seconds histogram
-graphql_request_duration_seconds_bucket{le="0.01",operation_name="GetDevices",operation_type="query"} 0.0
-...
-
-# HELP graphql_query_depth Depth of GraphQL queries
-# TYPE graphql_query_depth histogram
-graphql_query_depth_bucket{le="1.0",operation_name="GetDevices"} 1.0
+graphql_request_duration_seconds_bucket{le="0.01",operation_name="GetUsers",operation_type="query"} 1.0
 ...
 ```
 
-### 3. Configure Prometheus Scraping
+## Step 6 — Enable query logging (optional)
 
-Add a scrape target in your `prometheus.yml`:
-
-```yaml
-scrape_configs:
-  - job_name: "nautobot-graphql"
-    metrics_path: "/metrics/"
-    static_configs:
-      - targets: ["nautobot:8080"]
-```
-
-### 4. Enable Query Logging (Optional)
-
-To also log every GraphQL query, enable logging in your `nautobot_config.py`:
+Add the logging middleware and enable it via settings:
 
 ```python
-PLUGINS_CONFIG = {
-    "nautobot_graphql_observability": {
-        "query_logging_enabled": True,
-        "log_query_body": True,
-    }
+# settings.py
+GRAPHENE = {
+    "SCHEMA": "myapp.schema.schema",
+    "MIDDLEWARE": [
+        "graphene_django_observability.logging_middleware.GraphQLQueryLoggingMiddleware",
+        "graphene_django_observability.middleware.PrometheusMiddleware",
+    ],
+}
+
+GRAPHENE_OBSERVABILITY = {
+    "query_logging_enabled": True,
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "loggers": {
+        "graphene_django_observability.graphql_query_log": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
 }
 ```
 
-After restarting Nautobot, send a GraphQL query and check the Nautobot logs. With [structlog JSON logging](app_use_cases.md#structured-json-logging-with-structlog) configured, each entry looks like:
+After sending a query you will see a structured log line:
 
-```json
-{
-  "event": "graphql_query",
-  "level": "info",
-  "logger": "nautobot_graphql_observability.graphql_query_log",
-  "timestamp": "2026-02-19T14:32:05.123456Z",
-  "operation_type": "query",
-  "operation_name": "GetDevices",
-  "user": "admin",
-  "duration_ms": 42.3,
-  "status": "success",
-  "query": "query GetDevices { devices { name } }"
-}
+```
+graphql_query operation_type=query operation_name=GetUsers user=anonymous duration_ms=12.3 status=success
 ```
 
-## What are the next steps?
+## Next Steps
 
-- Review the [App Configuration](../admin/install.md#app-configuration) to tune which metrics and logging options are enabled.
-- Set up Grafana dashboards using the provided [templates](external_interactions.md#grafana-dashboards).
-- Route query logs to external systems — see [Query Logging](app_use_cases.md#query-logging).
-- Check out the [Use Cases](app_use_cases.md) section for more examples.
+- See [Configuration Reference](../admin/install.md#configuration-reference) for all available options.
+- See [Use Cases](app_use_cases.md) for common patterns like slow-query alerting and per-user tracking.
+- See [Extending](../dev/extending.md) to add custom metrics.

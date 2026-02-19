@@ -308,4 +308,4 @@ invoke.yml
 public
 /compose.yaml
 /dump.sql
-/nautobot_app_prometheus_graphql/static/nautobot_app_prometheus_graphql/docs
+/site

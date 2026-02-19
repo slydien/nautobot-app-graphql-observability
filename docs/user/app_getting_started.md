@@ -61,7 +61,7 @@ scrape_configs:
 
 ### 4. Enable Query Logging (Optional)
 
-To also log every GraphQL query to the console, enable logging in your `nautobot_config.py`:
+To also log every GraphQL query, enable logging in your `nautobot_config.py`:
 
 ```python
 PLUGINS_CONFIG = {
@@ -72,10 +72,21 @@ PLUGINS_CONFIG = {
 }
 ```
 
-After restarting Nautobot, send a GraphQL query and check the Nautobot logs. You should see entries like:
+After restarting Nautobot, send a GraphQL query and check the Nautobot logs. With [structlog JSON logging](app_use_cases.md#structured-json-logging-with-structlog) configured, each entry looks like:
 
-```
-14:32:05.123 INFO    nautobot_graphql_observability.graphql_query_log : operation_type=query operation_name=GetDevices user=admin duration_ms=42.3 status=success query=query GetDevices { devices { name } }
+```json
+{
+  "event": "graphql_query",
+  "level": "info",
+  "logger": "nautobot_graphql_observability.graphql_query_log",
+  "timestamp": "2026-02-19T14:32:05.123456Z",
+  "operation_type": "query",
+  "operation_name": "GetDevices",
+  "user": "admin",
+  "duration_ms": 42.3,
+  "status": "success",
+  "query": "query GetDevices { devices { name } }"
+}
 ```
 
 ## What are the next steps?

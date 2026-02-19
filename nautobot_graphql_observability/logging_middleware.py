@@ -122,36 +122,29 @@ class GraphQLQueryLoggingMiddleware:  # pylint: disable=too-few-public-methods
 
 
 def _emit_log(meta, duration_ms):
-    """Build and emit the structured log message."""
+    """Emit a structured log record for the GraphQL query."""
     error = meta.get("error")
     status = "error" if error else "success"
 
-    parts = [
-        f"operation_type={meta['operation_type']}",
-        f"operation_name={meta['operation_name']}",
-        f"user={meta['user']}",
-        f"duration_ms={duration_ms:.1f}",
-        f"status={status}",
-    ]
-
+    extra = {
+        "operation_type": meta["operation_type"],
+        "operation_name": meta["operation_name"],
+        "user": meta["user"],
+        "duration_ms": round(duration_ms, 1),
+        "status": status,
+    }
     if error:
-        parts.append(f"error_type={type(error).__name__}")
+        extra["error_type"] = type(error).__name__
+    if meta.get("query_body"):
+        extra["query"] = meta["query_body"]
+    if meta.get("variables"):
+        extra["variables"] = meta["variables"]
 
-    query_body = meta.get("query_body")
-    if query_body:
-        parts.append(f"query={query_body}")
-
-    variables = meta.get("variables")
-    if variables:
-        parts.append(f"variables={variables}")
-
-    message = " ".join(parts)
     log = _get_logger()
-
     if error:
-        log.warning(message)
+        log.warning("graphql_query", extra=extra)
     else:
-        log.info(message)
+        log.info("graphql_query", extra=extra)
 
 
 def _extract_query_body(info):

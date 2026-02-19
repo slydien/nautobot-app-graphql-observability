@@ -614,6 +614,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#structured-json-logging-with-structlog" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structured JSON Logging with structlog
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#routing-logs-to-external-systems" class="md-nav__link">
     <span class="md-ellipsis">
       Routing Logs to External Systems
@@ -1344,6 +1353,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#structured-json-logging-with-structlog" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structured JSON Logging with structlog
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#routing-logs-to-external-systems" class="md-nav__link">
     <span class="md-ellipsis">
       Routing Logs to External Systems
@@ -1454,14 +1472,125 @@
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="log-output-format">Log Output Format<a class="headerlink" href="#log-output-format" title="Permanent link">&para;</a></h3>
-<p>Each query produces a structured log line:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>14:32:05.123 INFO    nautobot_graphql_observability.graphql_query_log : operation_type=query operation_name=GetDevices user=admin duration_ms=42.3 status=success query=query GetDevices { devices { name } }
+<p>The logging middleware emits structured records using Python's standard <code>logging</code> module under the logger name <code>nautobot_graphql_observability.graphql_query_log</code>. Each record carries the following fields as <code>LogRecord</code> attributes (via <code>extra</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>event</code></td>
+<td><code>str</code></td>
+<td>Always <code>"graphql_query"</code></td>
+</tr>
+<tr>
+<td><code>operation_type</code></td>
+<td><code>str</code></td>
+<td><code>"query"</code> or <code>"mutation"</code></td>
+</tr>
+<tr>
+<td><code>operation_name</code></td>
+<td><code>str</code></td>
+<td>Named operation or comma-separated root fields for anonymous queries</td>
+</tr>
+<tr>
+<td><code>user</code></td>
+<td><code>str</code></td>
+<td>Authenticated username, or <code>"anonymous"</code></td>
+</tr>
+<tr>
+<td><code>duration_ms</code></td>
+<td><code>float</code></td>
+<td>Total request duration in milliseconds</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>str</code></td>
+<td><code>"success"</code> or <code>"error"</code></td>
+</tr>
+<tr>
+<td><code>error_type</code></td>
+<td><code>str</code></td>
+<td>Exception class name — only present on error</td>
+</tr>
+<tr>
+<td><code>query</code></td>
+<td><code>str</code></td>
+<td>Full query text — only present when <code>log_query_body</code> is enabled</td>
+</tr>
+<tr>
+<td><code>variables</code></td>
+<td><code>str</code></td>
+<td>JSON-encoded variables — only present when <code>log_query_variables</code> is enabled</td>
+</tr>
+</tbody>
+</table>
+<h3 id="structured-json-logging-with-structlog">Structured JSON Logging with structlog<a class="headerlink" href="#structured-json-logging-with-structlog" title="Permanent link">&para;</a></h3>
+<p>For production deployments sending logs to aggregation systems (Loki, Elasticsearch, Splunk, etc.), Nautobot's built-in <code>setup_structlog_logging</code> helper can be used to emit all log output as JSON. The query log fields will appear as top-level JSON keys.</p>
+<p>Add the following to your <code>nautobot_config.py</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">structlog</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nautobot.core.settings_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_structlog_logging</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># Declare only the loggers that need explicit configuration:</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="c1">#   - django and nautobot are already defined in nautobot.core.settings.</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1">#   - django.request is not; list it so disable_existing_loggers=True doesn&#39;t silence it.</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="c1">#   - nautobot_graphql_observability.graphql_query_log must be listed directly because</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="c1">#     the logging middleware always sets propagate=False, so the record never reaches</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="c1">#     the root logger and needs a handler attached to this exact logger name.</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="n">LOGGING</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>    <span class="s2">&quot;loggers&quot;</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>        <span class="s2">&quot;django.request&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="s2">&quot;INFO&quot;</span><span class="p">},</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>        <span class="s2">&quot;nautobot_graphql_observability.graphql_query_log&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="s2">&quot;INFO&quot;</span><span class="p">},</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>    <span class="p">},</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="p">}</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="n">setup_structlog_logging</span><span class="p">(</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>    <span class="n">LOGGING</span><span class="p">,</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>    <span class="n">INSTALLED_APPS</span><span class="p">,</span>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>    <span class="n">MIDDLEWARE</span><span class="p">,</span>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>    <span class="n">log_level</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>    <span class="n">plain_format</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># False → JSONRenderer; True → ConsoleRenderer (human-readable)</span>
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a><span class="p">)</span>
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a><span class="c1"># setup_structlog_logging overwrites the formatter; append ExtraAdder afterwards so that</span>
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a><span class="c1"># the extra fields (operation_type, operation_name, user, …) are promoted from the</span>
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a><span class="c1"># LogRecord into top-level JSON keys instead of being invisible in the event string.</span>
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a><span class="c1"># In test mode setup_structlog_logging returns early without creating formatters, so guard.</span>
+<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a><span class="k">if</span> <span class="s2">&quot;formatters&quot;</span> <span class="ow">in</span> <span class="n">LOGGING</span><span class="p">:</span>
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>    <span class="n">_fmt</span> <span class="o">=</span> <span class="n">LOGGING</span><span class="p">[</span><span class="s2">&quot;formatters&quot;</span><span class="p">][</span><span class="s2">&quot;default_formatter&quot;</span><span class="p">]</span>
+<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>    <span class="n">_fmt</span><span class="p">[</span><span class="s2">&quot;foreign_pre_chain&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">_fmt</span><span class="p">[</span><span class="s2">&quot;foreign_pre_chain&quot;</span><span class="p">],</span> <span class="n">structlog</span><span class="o">.</span><span class="n">stdlib</span><span class="o">.</span><span class="n">ExtraAdder</span><span class="p">())</span>
 </code></pre></div>
-<p>Failed queries are logged at WARNING level and include the error type:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>14:32:06.456 WARNING nautobot_graphql_observability.graphql_query_log : operation_type=query operation_name=BadQuery user=admin duration_ms=5.1 status=error error_type=GraphQLError
+<p>Each query log entry will be emitted as a single JSON object:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">&quot;event&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;graphql_query&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">&quot;level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">&quot;logger&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nautobot_graphql_observability.graphql_query_log&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-19T08:16:31.818110Z&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="nt">&quot;operation_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;query&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="nt">&quot;operation_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;GetDevices&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">  </span><span class="nt">&quot;user&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;admin&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span><span class="nt">&quot;duration_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">162.4</span><span class="p">,</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;success&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">  </span><span class="nt">&quot;query&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;query GetDevices { devices { name } }&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">  </span><span class="nt">&quot;ip&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;192.168.148.1&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">  </span><span class="nt">&quot;request_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0e2936fc-7989-4fcb-a63a-d0dd4d6bcea7&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">  </span><span class="nt">&quot;user_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="p">}</span>
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>ip</code>, <code>request_id</code>, and <code>user_id</code> are injected automatically by <code>django_structlog.middlewares.RequestMiddleware</code>, which <code>setup_structlog_logging</code> adds to <code>MIDDLEWARE</code>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>setup_structlog_logging</code> also configures the <code>nautobot</code> and <code>django</code> loggers (already present in Nautobot's base settings) with the same JSON formatter, so all Nautobot and Django log output is consistently structured.</p>
+</div>
 <h3 id="routing-logs-to-external-systems">Routing Logs to External Systems<a class="headerlink" href="#routing-logs-to-external-systems" title="Permanent link">&para;</a></h3>
-<p>The logging middleware uses Python's standard <code>logging</code> module with the logger name <code>nautobot_graphql_observability.graphql_query_log</code>. You can route these logs to any backend via Django's <code>LOGGING</code> configuration:</p>
+<p>If you are not using structlog, the logging middleware uses Python's standard <code>logging</code> module and can be routed to any backend via Django's <code>LOGGING</code> configuration:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># nautobot_config.py</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">LOGGING</span> <span class="o">=</span> <span class="p">{</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>

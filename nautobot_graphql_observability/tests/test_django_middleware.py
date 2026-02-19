@@ -108,4 +108,4 @@ class RecordObservabilityTest(TestCase):
             _record_observability(request, 0.050)
 
         self.assertEqual(len(logs.output), 1)
-        self.assertIn("duration_ms=50.0", logs.output[0])
+        self.assertEqual(logs.records[0].duration_ms, 50.0)

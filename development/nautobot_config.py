@@ -3,8 +3,9 @@
 import os
 import sys
 
+import structlog
 from nautobot.core.settings import *  # noqa: F403  # pylint: disable=wildcard-import,unused-wildcard-import
-from nautobot.core.settings_funcs import is_truthy
+from nautobot.core.settings_funcs import is_truthy, setup_structlog_logging
 
 #
 # Debug
@@ -101,41 +102,45 @@ if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
 
 LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
 
-# Verbose logging during normal development operation, but quiet logging during unit test execution
-if not _TESTING:
-    LOGGING = {
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {
-            "normal": {
-                "format": "%(asctime)s.%(msecs)03d %(levelname)-7s %(name)s : %(message)s",
-                "datefmt": "%H:%M:%S",
-            },
-            "verbose": {
-                "format": "%(asctime)s.%(msecs)03d %(levelname)-7s %(name)-20s %(filename)-15s %(funcName)30s() : %(message)s",
-                "datefmt": "%H:%M:%S",
-            },
-        },
-        "handlers": {
-            "normal_console": {
-                "level": "INFO",
-                "class": "logging.StreamHandler",
-                "formatter": "normal",
-            },
-            "verbose_console": {
-                "level": "DEBUG",
-                "class": "logging.StreamHandler",
-                "formatter": "verbose",
-            },
-        },
-        "loggers": {
-            "django": {"handlers": ["normal_console"], "level": "INFO"},
-            "nautobot": {
-                "handlers": ["verbose_console" if DEBUG else "normal_console"],
-                "level": LOG_LEVEL,
-            },
-        },
-    }
+# All three loggers use the single default_handler wired by setup_structlog_logging.
+# nautobot_graphql_observability.graphql_query_log must be listed here explicitly:
+# _get_logger() in logging_middleware.py unconditionally sets propagate=False, so
+# the record never reaches the root logger — a direct handler is required.
+LOGGING = {
+    "loggers": {
+        # django and nautobot are already defined in nautobot.core.settings and
+        # will be picked up automatically by setup_structlog_logging.
+        #
+        # django.request is NOT in the base settings; list it here so it is not
+        # silenced by disable_existing_loggers=True if Django created the logger
+        # before dictConfig runs.
+        "django.request": {"level": "INFO"},
+        # Must be listed directly: _get_logger() in logging_middleware.py sets
+        # propagate=False unconditionally, so the record never reaches the root
+        # logger and needs a handler attached to this exact logger name.
+        "nautobot_graphql_observability.graphql_query_log": {"level": "INFO"},
+    },
+}
+
+# Configures structlog + overwrites LOGGING formatters/handlers/root in-place.
+# plain_format=True → ConsoleRenderer (human-readable) in DEBUG mode.
+# plain_format=False → JSONRenderer in production mode.
+# Test mode (sys.argv contains "test") is handled internally: all loggers → NullHandler.
+setup_structlog_logging(
+    LOGGING,
+    INSTALLED_APPS,  # noqa: F405
+    MIDDLEWARE,  # noqa: F405
+    log_level=LOG_LEVEL,
+    plain_format=DEBUG,
+)
+
+# setup_structlog_logging overwrites formatters; append ExtraAdder here so that
+# fields passed via logging.extra() (operation_type, operation_name, user, …)
+# are promoted to top-level JSON keys instead of being buried in the event string.
+# In test mode setup_structlog_logging returns before creating formatters, so guard.
+if "formatters" in LOGGING:
+    _fmt = LOGGING["formatters"]["default_formatter"]
+    _fmt["foreign_pre_chain"] = (*_fmt["foreign_pre_chain"], structlog.stdlib.ExtraAdder())
 
 #
 # Apps

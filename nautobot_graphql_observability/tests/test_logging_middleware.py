@@ -174,12 +174,12 @@ class EmitLogTest(TestCase):
             _emit_log(meta, duration_ms=42.5)
 
         self.assertEqual(len(logs.output), 1)
-        log_line = logs.output[0]
-        self.assertIn("operation_type=query", log_line)
-        self.assertIn("operation_name=TestOp", log_line)
-        self.assertIn("user=testuser", log_line)
-        self.assertIn("duration_ms=42.5", log_line)
-        self.assertIn("status=success", log_line)
+        record = logs.records[0]
+        self.assertEqual(record.operation_type, "query")
+        self.assertEqual(record.operation_name, "TestOp")
+        self.assertEqual(record.user, "testuser")
+        self.assertEqual(record.duration_ms, 42.5)
+        self.assertEqual(record.status, "success")
 
     def test_error_logs_at_warning(self):
         meta = {
@@ -192,9 +192,9 @@ class EmitLogTest(TestCase):
         with self.assertLogs(LOGGER_NAME, level="WARNING") as logs:
             _emit_log(meta, duration_ms=10.0)
 
-        log_line = logs.output[0]
-        self.assertIn("status=error", log_line)
-        self.assertIn("error_type=ValueError", log_line)
+        record = logs.records[0]
+        self.assertEqual(record.status, "error")
+        self.assertEqual(record.error_type, "ValueError")
 
     def test_query_body_in_log(self):
         meta = {
@@ -207,7 +207,7 @@ class EmitLogTest(TestCase):
         with self.assertLogs(LOGGER_NAME, level="INFO") as logs:
             _emit_log(meta, duration_ms=5.0)
 
-        self.assertIn("query={ devices { id } }", logs.output[0])
+        self.assertEqual(logs.records[0].query, "{ devices { id } }")
 
     def test_variables_in_log(self):
         meta = {
@@ -220,4 +220,4 @@ class EmitLogTest(TestCase):
         with self.assertLogs(LOGGER_NAME, level="INFO") as logs:
             _emit_log(meta, duration_ms=5.0)
 
-        self.assertIn('variables={"name":"test"}', logs.output[0])
+        self.assertEqual(logs.records[0].variables, '{"name":"test"}')

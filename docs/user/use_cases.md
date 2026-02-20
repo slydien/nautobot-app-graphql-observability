@@ -1,6 +1,6 @@
-# Using the App
+# Use Cases
 
-This document describes common use-cases and scenarios for this App.
+This document describes common use-cases and scenarios for this library.
 
 ## Monitoring Query Performance
 
@@ -72,7 +72,7 @@ sum by (operation_type) (rate(graphql_requests_total[5m]))
 
 ## Query Logging
 
-The app includes a separate logging middleware that emits structured log entries for every GraphQL operation. This complements the Prometheus metrics by providing per-request detail that can be searched, filtered, and forwarded to log aggregation systems.
+The library includes a separate logging middleware that emits structured log entries for every GraphQL operation. This complements the Prometheus metrics by providing per-request detail that can be searched, filtered, and forwarded to log aggregation systems.
 
 ### Enabling Query Logging
 

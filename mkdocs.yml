@@ -94,9 +94,9 @@ validation:
 nav:
   - Overview: "index.md"
   - User Guide:
-      - Overview: "user/app_overview.md"
-      - Getting Started: "user/app_getting_started.md"
-      - Use Cases: "user/app_use_cases.md"
+      - Overview: "user/overview.md"
+      - Getting Started: "user/getting_started.md"
+      - Use Cases: "user/use_cases.md"
       - External Integrations: "user/external_interactions.md"
       - FAQ: "user/faq.md"
   - Administrator Guide:

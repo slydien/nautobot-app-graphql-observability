@@ -123,5 +123,5 @@ graphql_query operation_type=query operation_name=GetUsers user=anonymous durati
 ## Next Steps
 
 - See [Configuration Reference](../admin/install.md#configuration-reference) for all available options.
-- See [Use Cases](app_use_cases.md) for common patterns like slow-query alerting and per-user tracking.
+- See [Use Cases](use_cases.md) for common patterns like slow-query alerting and per-user tracking.
 - See [Extending](../dev/extending.md) to add custom metrics.

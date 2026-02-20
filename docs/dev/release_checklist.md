@@ -1,6 +1,6 @@
 # Release Checklist
 
-This document is intended for app maintainers and outlines the steps to perform when releasing a new version of the app.
+This document is intended for library maintainers and outlines the steps to perform when releasing a new version of the library.
 
 !!! important
     Before starting, make sure your **local** `develop`, `main`, and (if applicable) the current LTM branch are all up to date with upstream!
@@ -40,7 +40,7 @@ Commit any resulting changes from the following sections to the documentation be
 
 ### Verify the Installation and Upgrade Steps
 
-Follow the [installation instructions](../admin/install.md) to perform a new production installation of the app. If possible, also test the [upgrade process](../admin/upgrade.md) from the previous released version.
+Follow the [installation instructions](../admin/install.md) to perform a new production installation of the library. If possible, also test the [upgrade process](../admin/upgrade.md) from the previous released version.
 
 The goal of this step is to walk through the entire install process *as documented* to make sure nothing there needs to be changed or updated, to catch any errors or omissions in the documentation, and to ensure that it is current with each release.
 

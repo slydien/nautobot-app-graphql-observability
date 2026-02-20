@@ -1,14 +1,14 @@
 # External Interactions
 
-This document describes external dependencies and prerequisites for this App to operate.
+This document describes external dependencies and prerequisites for this library to operate.
 
 ## External System Integrations
 
-### From Other Systems to the App
+### From Other Systems to the Library
 
 #### Prometheus Scraping
 
-The app registers its metrics in the default `prometheus_client` registry. They are served by the built-in `/metrics/` endpoint (provided by `graphene_django_observability.urls`).
+The library registers its metrics in the default `prometheus_client` registry. They are served by the built-in `/metrics/` endpoint (provided by `graphene_django_observability.urls`).
 
 - **URL**: `/metrics/`
 - **Format**: Standard Prometheus text exposition format
@@ -63,8 +63,8 @@ The logging middleware emits structured log entries to the `graphene_django_obse
 | HTTP | `logging.handlers.HTTPHandler` | Send log entries to an HTTP endpoint (e.g., Logstash, Splunk HEC). |
 | Console | `logging.StreamHandler` | Default behavior — writes to stderr. |
 
-See [Query Logging](app_use_cases.md#query-logging) for configuration examples.
+See [Query Logging](use_cases.md#query-logging) for configuration examples.
 
 ## REST API Endpoints
 
-This app does not add any REST API endpoints. All metrics are available at the `/metrics/` endpoint configured in your URL configuration.
+This library does not add any REST API endpoints. All metrics are available at the `/metrics/` endpoint configured in your URL configuration.

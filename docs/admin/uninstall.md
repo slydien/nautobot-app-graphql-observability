@@ -1,24 +1,16 @@
-# Uninstall the App from Nautobot
-
-Here you will find any steps necessary to cleanly remove the App from your Nautobot environment.
-
-## Remove App Configuration
-
-This app has no database models, so there are no migrations to roll back. Simply remove the configuration from `nautobot_config.py`:
-
-1. Remove `"nautobot_graphql_observability"` from the `PLUGINS` list.
-2. Remove the `"nautobot_graphql_observability"` entry from `PLUGINS_CONFIG` (if present).
-
-## Uninstall the Package
-
-```bash
-pip uninstall nautobot-graphql-observability
-```
-
-## Restart Services
-
-Restart Nautobot services to apply the changes:
+# Uninstalling
 
 ```shell
-sudo systemctl restart nautobot nautobot-worker nautobot-scheduler
+pip uninstall graphene-django-observability
 ```
+
+Then remove the following from your `settings.py`:
+
+- `"graphene_django_observability"` from `INSTALLED_APPS`
+- `"graphene_django_observability.django_middleware.GraphQLObservabilityDjangoMiddleware"` from `MIDDLEWARE`
+- The Graphene middlewares from `GRAPHENE["MIDDLEWARE"]`
+- The `GRAPHENE_OBSERVABILITY` dict (if present)
+
+And remove the URL pattern from `urls.py` (if you added it).
+
+This library has no database migrations, so no data cleanup is required.

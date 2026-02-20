@@ -1,86 +1,55 @@
-# Frequently Asked Questions
+# FAQ
 
-## Why don't I see any metrics after installing the app?
+## Why do I not see metrics immediately after installation?
 
-Metrics are only recorded when GraphQL queries are executed against the `/api/graphql/` endpoint. Send a test query and then check the metrics at Nautobot's default `/metrics/` endpoint.
+Prometheus counters and histograms only appear in the output **after the first observation**.  Send at least one GraphQL query and then check `/graphql-observability/metrics/`.
 
-If metrics still don't appear, verify that:
+## I already have a `/metrics/` endpoint from `django-prometheus`. Will this conflict?
 
-1. The app is listed in `PLUGINS` in your `nautobot_config.py`.
-2. Nautobot was restarted after installation.
-3. The `graphql_metrics_enabled` setting is `True` (the default).
+No.  The library registers its metrics in the **default Prometheus registry** (`prometheus_client.REGISTRY`).  Any endpoint that calls `generate_latest()` on the default registry — including `django-prometheus`'s endpoint — will include the GraphQL metrics automatically.  You do not need to mount `graphene_django_observability.urls` in that case.
 
-## How do I configure Prometheus to scrape this endpoint?
+## What is the performance overhead?
 
-Add the following to your `prometheus.yml`:
+The overhead is very low.  By default, counters and histograms are recorded once per root field resolution and once per HTTP request.  Only `track_field_resolution: True` adds overhead proportional to the number of fields returned — avoid it in high-traffic production environments.
 
-```yaml
-scrape_configs:
-  - job_name: "nautobot-graphql"
-    metrics_path: "/metrics/"
-    static_configs:
-      - targets: ["nautobot-host:8080"]
-```
+## Does the middleware work with multi-process deployments (Gunicorn, uWSGI)?
 
-No authentication is required — Nautobot's `/metrics/` endpoint bypasses DRF.
-
-## What is the performance impact of this app?
-
-The basic metrics (request count, duration, errors) add negligible overhead since they only instrument the root resolver.
-
-Enabling `track_query_depth` and `track_query_complexity` adds a small amount of overhead to parse the query AST after resolution. This is typically sub-millisecond.
-
-Enabling `track_field_resolution` instruments **every** field resolver in every query. This can add measurable overhead for complex queries with hundreds of fields. It is recommended to leave this disabled in production and only enable it for short-term debugging.
-
-## How does this work with multiple Nautobot worker processes?
-
-Set the `PROMETHEUS_MULTIPROC_DIR` environment variable to a writable directory before starting Nautobot:
+Yes, with the standard `prometheus_client` multi-process setup.  Set the `PROMETHEUS_MULTIPROC_DIR` environment variable to a writable directory:
 
 ```shell
 export PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc
 mkdir -p "$PROMETHEUS_MULTIPROC_DIR"
 ```
 
-The `prometheus_client` library will use shared files in this directory to aggregate metrics across all worker processes. Nautobot's `/metrics/` endpoint automatically handles multiprocess aggregation.
+The metrics endpoint will aggregate metrics from all worker processes automatically.
 
-## Why does the app monkey-patch GraphQLDRFAPIView?
+## How do I suppress the `graphql_query_log` output in tests?
 
-Nautobot 3.x's `GraphQLDRFAPIView.init_graphql()` has a bug: when `self.middleware` is `None` (the default), it does not load middleware from the `GRAPHENE["MIDDLEWARE"]` Django setting. The app patches this method during `AppConfig.ready()` to ensure configured Graphene middleware is properly loaded.
-
-## How do I enable GraphQL query logging?
-
-Set `query_logging_enabled` to `True` in your `PLUGINS_CONFIG`:
+The logger name is `graphene_django_observability.graphql_query_log`.  In your test settings, set its level to `CRITICAL`:
 
 ```python
-PLUGINS_CONFIG = {
-    "nautobot_graphql_observability": {
-        "query_logging_enabled": True,
-    }
+LOGGING = {
+    "version": 1,
+    "loggers": {
+        "graphene_django_observability.graphql_query_log": {
+            "level": "CRITICAL",
+        },
+    },
 }
 ```
 
-Optionally enable `log_query_body` and `log_query_variables` to include the query text and variables in each log entry. See [Query Logging](app_use_cases.md#query-logging) for details on routing logs to external systems.
+## Can I use only the Prometheus middleware without the query logging middleware?
 
-## Why aren't my query logs appearing?
+Yes.  The two middlewares are fully independent.  Include only the ones you need in `GRAPHENE["MIDDLEWARE"]`.
 
-The logging middleware uses a dedicated logger (`nautobot_graphql_observability.graphql_query_log`) that writes to stderr by default. If you have a custom Django `LOGGING` configuration that suppresses loggers not explicitly listed, you may need to add an entry for this logger. See [Routing Logs to External Systems](app_use_cases.md#routing-logs-to-external-systems).
+## Can I use only the query logging middleware without Prometheus?
 
-## Can I use metrics and logging independently?
+Yes.  The `GraphQLQueryLoggingMiddleware` has no dependency on the `PrometheusMiddleware`.
 
-Yes. The two middlewares are independent:
+## What happens to anonymous (unnamed) GraphQL queries?
 
-- Set `graphql_metrics_enabled: True` and `query_logging_enabled: False` for metrics only.
-- Set `graphql_metrics_enabled: False` and `query_logging_enabled: True` for logging only.
-- Enable both for full observability.
+When a query has no explicit `operationName`, the library uses the sorted, comma-joined list of root field names as the operation name label (e.g. `"devices,locations"`).  This avoids a high-cardinality `anonymous` label.
 
-## Do Celery workers emit structured JSON logs?
+## Does this work with Django REST Framework (DRF) views?
 
-Not by default. Even though Celery workers load the same `nautobot_config.py` as the web process, Celery overrides the Python logging configuration after Django's setup runs — both in the main worker process and in each prefork child process. As a result, all Celery log output uses Celery's own plain-text format (`[timestamp: LEVEL/ProcessName] message`) regardless of what structlog configured.
-
-This does **not** affect the GraphQL metrics or query logging features of this app, which only run in the web process during HTTP request handling.
-
-If you want Celery workers to also emit structlog JSON (e.g. for log aggregation pipelines), see [Celery Workers and Structured JSON Logging](../admin/install.md#celery-workers-and-structured-json-logging) in the installation guide.
-
-## Can I use this app without Nautobot?
-
-The `PrometheusMiddleware` and `GraphQLQueryLoggingMiddleware` classes are standard Graphene middlewares. While this Nautobot app handles the automatic setup and configuration, the middlewares themselves could be used in any Graphene-based project by manually adding them to your `GRAPHENE["MIDDLEWARE"]` setting.
+Yes.  The `PrometheusMiddleware` and `GraphQLQueryLoggingMiddleware` stash metadata on both the DRF request wrapper and the underlying `WSGIRequest`, so the Django HTTP middleware can read the data regardless of the view layer.

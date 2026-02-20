@@ -1,56 +1,38 @@
 [tool.poetry]
-name = "nautobot-graphql-observability"
-version = "2.1.0"
-description = "Nautobot App GraphQL Observability"
+name = "graphene-django-observability"
+version = "1.0.0"
+description = "Graphene-Django middleware for GraphQL observability: Prometheus metrics and structured query logging."
 authors = ["Lydien SANDANASAMY <dev@slydien.com>"]
 license = "Apache-2.0"
 readme = "README.md"
 homepage = "https://github.com/slydien/nautobot-app-graphql-observability"
 repository = "https://github.com/slydien/nautobot-app-graphql-observability"
-documentation = "https://docs.nautobot.com/projects/nautobot-graphql-observability/en/latest/"
-keywords = ["nautobot", "nautobot-app", "nautobot-plugin"]
+keywords = ["django", "graphql", "graphene", "graphene-django", "prometheus", "observability", "metrics", "middleware"]
 classifiers = [
     "Intended Audience :: Developers",
     "Development Status :: 5 - Production/Stable",
+    "Framework :: Django",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Monitoring",
 ]
 packages = [
-    { include = "nautobot_graphql_observability" },
-]
-include = [
-    # Poetry by default will exclude files that are in .gitignore
-    { path = "nautobot_graphql_observability/static/nautobot_graphql_observability/docs/**/*", format = ["sdist", "wheel"] }
+    { include = "graphene_django_observability" },
 ]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.14"
-# Used for local development
-nautobot = ">=3.0.0,<4.0.0"
+graphene-django = ">=3.0.0"
 prometheus-client = ">=0.17.0"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"
-django-debug-toolbar = "*"
-invoke = "*"
-ipython = "*"
-pylint = "*"
-pylint-django = ">=2.5.4"
-pylint-nautobot = ">=0.3.1"
 ruff = "0.5.5"
 yamllint = "*"
-toml = "*"
-# Python implementation of markdownlint
-pymarkdownlnt = "~0.9.30"
-Markdown = "*"
 towncrier = ">=23.6.0,<=24.8.0"
-to-json-schema = "*"
-jsonschema = "*"
-djlint = ">=1.36.4,<2.0.0"
-djhtml = ">=3.0.8,<4.0.0"
 tomli = { version = "*", markers = "python_version < '3.11'" }  # tomli is included in the stdlib as of Python 3.11
 
 [tool.poetry.group.docs.dependencies]
@@ -66,39 +48,10 @@ mkdocstrings-python = "1.10.8"
 mkdocs-autorefs = "1.2.0"
 griffe = "1.1.1"
 
-[tool.poetry.extras]
-all = [
-]
-
-[tool.pylint.master]
-# Include the pylint_django plugin to avoid spurious warnings about Django patterns
-load-plugins = "pylint_django, pylint_nautobot"
-ignore = ".venv"
-
-[tool.pylint.basic]
-# No docstrings required for private methods (Pylint default), or for test_ functions, or for inner Meta classes.
-no-docstring-rgx = "^(_|test_|Meta$)"
-
-[tool.pylint.messages_control]
-disable = """,
-    line-too-long,
-    too-many-positional-arguments,
-    nb-warn-dunder-filter-field,
-    nb-no-search-function,
-    nb-no-char-filter-q,
-    protected-access,
-"""
-
-[tool.pylint.miscellaneous]
-# Don't flag TODO as a failure, let us commit with things that still need to be done in the code
-notes = """,
-    FIXME,
-    XXX,
-    """
 
 [tool.ruff]
 line-length = 120
-target-version = "py38"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [
@@ -130,19 +83,12 @@ ignore = [
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"nautobot_graphql_observability/migrations/*" = [
+"graphene_django_observability/migrations/*" = [
     "D",
 ]
-"nautobot_graphql_observability/tests/*" = [
+"graphene_django_observability/tests/*" = [
     "D",
     "S"
-]
-"development/*" = [
-    "D",
-]
-"scripts/*" = [
-    "D",
-    "S",
 ]
 
 [tool.coverage.run]
@@ -153,24 +99,19 @@ omit = [
     "*/tests/*",
 ]
 include = [
-    "nautobot_graphql_observability/*",
+    "graphene_django_observability/*",
 ]
 
-[tool.pymarkdown]
-plugins.selectively_enable_rules = true
-plugins.blanks-around-lists.enabled = true
-plugins.list-anchored-indent.enabled = true
-extensions.front-matter.enabled = true
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.towncrier]
-package = "nautobot_graphql_observability"
+package = "graphene_django_observability"
 directory = "changes"
-filename = "docs/admin/release_notes/version_2.1.md"
-template = "development/towncrier_template.j2"
+filename = "docs/admin/release_notes/version_1.0.md"
+template = "towncrier_template.j2"
 start_string = "<!-- towncrier release notes start -->"
 issue_format = "[#{issue}](https://github.com/slydien/nautobot-app-graphql-observability/issues/{issue})"
 
@@ -224,7 +165,3 @@ directory = "housekeeping"
 name = "Housekeeping"
 showcontent = true
 
-[tool.djlint]
-ignore = "H005,H006,H008,H011,H012,H013,H014,H015,H016,H019,H020,H021,H022,H023,H025,H026,H030,H031,H037"
-profile="django"
-extend_exclude = "docs/,nautobot_graphql_observability/static/"

@@ -1,9 +1,9 @@
 ---
 dev_addr: "127.0.0.1:8001"
 edit_uri: "edit/main/docs"
-site_dir: "nautobot_graphql_observability/static/nautobot_graphql_observability/docs"
-site_name: "Nautobot App GraphQL Observability Documentation"
-site_url: "https://docs.nautobot.com/projects/nautobot-graphql-observability/en/latest/"
+site_dir: "site"
+site_name: "graphene-django-observability"
+site_url: "https://slydien.github.io/nautobot-app-graphql-observability/"
 repo_url: "https://github.com/slydien/nautobot-app-graphql-observability"
 copyright: "Copyright &copy; The Authors"
 theme:
@@ -26,7 +26,6 @@ theme:
     - "search.share"
     - "search.suggest"
   favicon: "assets/favicon.ico"
-  logo: "assets/nautobot_logo.svg"
   palette:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
@@ -48,23 +47,13 @@ extra_css:
 
 extra:
   generator: false
-  ntc_sponsor: true
   social:
-    - icon: "fontawesome/solid/rss"
-      link: "https://blog.networktocode.com/blog/tags/nautobot"
-      name: "Network to Code Blog"
-    - icon: "fontawesome/brands/youtube"
-      link: "https://www.youtube.com/playlist?list=PLjA0bhxgryJ2Ts4GJMDA-tPzVWEncv4pb"
-      name: "Nautobot Videos"
-    - icon: "fontawesome/brands/slack"
-      link: "https://www.networktocode.com/community/"
-      name: "Network to Code Community"
     - icon: "fontawesome/brands/github"
-      link: "https://github.com/nautobot/nautobot"
-      name: "GitHub Repo"
-    - icon: "fontawesome/brands/twitter"
-      link: "https://twitter.com/networktocode"
-      name: "Network to Code Twitter"
+      link: "https://github.com/slydien/nautobot-app-graphql-observability"
+      name: "GitHub Repository"
+    - icon: "fontawesome/brands/python"
+      link: "https://pypi.org/project/graphene-django-observability/"
+      name: "PyPI"
 markdown_extensions:
   - "markdown_version_annotations":
       admonition_tag: "???"
@@ -105,29 +94,26 @@ validation:
 nav:
   - Overview: "index.md"
   - User Guide:
-      - App Overview: "user/app_overview.md"
-      - Getting Started: "user/app_getting_started.md"
-      - Using the App: "user/app_use_cases.md"
-      - Frequently Asked Questions: "user/faq.md"
-      - External Interactions: "user/external_interactions.md"
+      - Overview: "user/overview.md"
+      - Getting Started: "user/getting_started.md"
+      - Use Cases: "user/use_cases.md"
+      - External Integrations: "user/external_interactions.md"
+      - FAQ: "user/faq.md"
   - Administrator Guide:
-      - Install and Configure: "admin/install.md"
+      - Install & Configure: "admin/install.md"
       - Upgrade: "admin/upgrade.md"
       - Uninstall: "admin/uninstall.md"
       - Compatibility Matrix: "admin/compatibility_matrix.md"
       - Release Notes:
           - "admin/release_notes/index.md"
-          - v2.1: "admin/release_notes/version_2.1.md"
-          - v2.0: "admin/release_notes/version_2.0.md"
           - v1.0: "admin/release_notes/version_1.0.md"
   - Developer Guide:
-      - Extending the App: "dev/extending.md"
-      - Contributing to the App: "dev/contributing.md"
+      - Extending: "dev/extending.md"
+      - Contributing: "dev/contributing.md"
       - Development Environment: "dev/dev_environment.md"
       - Release Checklist: "dev/release_checklist.md"
-      - Architecture Decision Records: "dev/arch_decision.md"
+      - Architecture Decisions: "dev/arch_decision.md"
       - Code Reference:
           - "dev/code_reference/index.md"
           - Package: "dev/code_reference/package.md"
           - API: "dev/code_reference/api.md"
-  - Nautobot Docs Home ↗︎: "https://docs.nautobot.com"

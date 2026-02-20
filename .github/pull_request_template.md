@@ -1,13 +1,3 @@
-<!--
-    Thank you for your interest in contributing to Nautobot App GraphQL Observability! Please note
-    that our contribution policy recommends that a feature request or bug
-    report be opened for approval prior to filing a pull request. This
-    helps avoid wasting time and effort on something that we might not
-    be able to accept.
-
-    Please indicate the relevant feature request or bug report below.
--->
-
 # Closes: #<ISSUE NUMBER GOES HERE>
 
 ## What's Changed
@@ -27,8 +17,8 @@
     Please feel free to update todos to keep track of your own notes for WIP PRs.
 -->
 - [ ] Explanation of Change(s)
-- [ ] Added change log fragment(s) (for more information see [the documentation](https://docs.nautobot.com/projects/core/en/stable/development/core/#creating-changelog-fragments))
-- [ ] Attached Screenshots, Payload Example
-- [ ] Unit, Integration Tests
+- [ ] Added changelog fragment in `changes/` (see [contributing guide](docs/dev/contributing.md))
+- [ ] Attached Screenshots / Payload Examples (where relevant)
+- [ ] Unit Tests
 - [ ] Documentation Updates (when adding/changing features)
 - [ ] Outline Remaining Work, Constraints from Design

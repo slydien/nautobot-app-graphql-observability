@@ -1,14 +1,12 @@
 ---
 extends: "default"
-rules:
-  comments: "enable"
-  empty-values: "disable"
-  indentation:
-    indent-sequences: "consistent"
-  line-length: "disable"
-  quoted-strings:
-    quote-type: "double"
 ignore: |
-  .venv/
-  compose.yaml
-  nautobot_graphql_observability/static/
+  development/
+  docs/grafana/
+rules:
+  line-length:
+    max: 120
+    level: "warning"
+  truthy:
+    allowed-values: ["true", "false", "on"]
+    level: "error"

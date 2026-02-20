@@ -6,8 +6,9 @@ labels:
 ---
 
 ### Environment
-* Nautobot version:  <!-- Example: 3.0.0 -->
-* nautobot-graphql-observability version:  <!-- Example: 1.0.0 -->
+* Django version:  <!-- Example: 4.2.0 -->
+* graphene-django version:  <!-- Example: 3.2.0 -->
+* graphene-django-observability version:  <!-- Example: 1.0.0 -->
 
 <!--
     Describe in detail the new functionality you are proposing.

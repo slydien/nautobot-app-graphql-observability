@@ -1,54 +1,74 @@
-# Extending the App
+# Extending
 
-Contributions and extensions are welcome. Please open an issue first to discuss the proposed change before submitting a PR.
+## Adding a Custom Metric Label
 
-## Adding Custom Metrics
-
-To add a new Prometheus metric:
-
-1. Define the metric in `nautobot_graphql_observability/metrics.py`:
-
-    ```python
-    from prometheus_client import Counter
-
-    graphql_deprecated_fields_total = Counter(
-        "graphql_deprecated_fields_total",
-        "Total usage of deprecated GraphQL fields",
-        ["type_name", "field_name"],
-    )
-    ```
-
-2. Import and record it in the appropriate method of `PrometheusMiddleware` in `nautobot_graphql_observability/middleware.py`.
-
-3. If the metric should be optional, add a new boolean setting to `NautobotAppGraphqlObservabilityConfig.default_settings` in `__init__.py` and gate the recording behind a config check in the middleware.
-
-## Adding New Labels to Existing Metrics
-
-Adding labels to existing metrics is a **breaking change** for Prometheus (it creates a new time series). If you need additional labels:
-
-1. Consider creating a new metric instead.
-2. If modifying an existing metric, update the label list in `metrics.py` and all `.labels()` calls in `middleware.py`.
-3. Update tests to include the new label values.
-
-## Customizing Histogram Buckets
-
-The default histogram buckets are defined in `metrics.py`. To customize them for your deployment, you can fork the metric definitions. A future enhancement may allow bucket configuration via `PLUGINS_CONFIG`.
-
-## Extending the Logging Middleware
-
-The `GraphQLQueryLoggingMiddleware` in `nautobot_graphql_observability/logging_middleware.py` can be extended to add custom fields to log entries. The middleware uses Python's standard `logging` module with the logger name `nautobot_graphql_observability.graphql_query_log`.
-
-To add custom log fields, subclass `GraphQLQueryLoggingMiddleware` and override `_log_query()`:
+Subclass `PrometheusMiddleware` and override `resolve()` to add extra labels.
+Make sure the new label is also added to the metric definition in `metrics.py`.
 
 ```python
-from nautobot_graphql_observability.logging_middleware import GraphQLQueryLoggingMiddleware
+from graphene_django_observability.middleware import PrometheusMiddleware
+from graphene_django_observability.metrics import graphql_requests_total
+from prometheus_client import Counter
 
-class CustomLoggingMiddleware(GraphQLQueryLoggingMiddleware):
-    @staticmethod
-    def _log_query(config, operation_type, operation_name, user, start_time, info, error=None):
-        # Call parent to emit the standard log entry
-        GraphQLQueryLoggingMiddleware._log_query(
-            config, operation_type, operation_name, user, start_time, info, error
-        )
-        # Add custom logic here
+# Redefine the counter with the extra label
+graphql_requests_with_tenant = Counter(
+    "graphql_requests_with_tenant_total",
+    "GraphQL requests with tenant label",
+    ["operation_type", "operation_name", "status", "tenant"],
+)
+
+
+class TenantAwarePrometheusMiddleware(PrometheusMiddleware):
+    def resolve(self, next, root, info, **kwargs):
+        if root is not None:
+            return next(root, info, **kwargs)
+
+        tenant = getattr(info.context, "tenant", "unknown")
+        result = super().resolve(next, root, info, **kwargs)
+        # record with tenant label
+        graphql_requests_with_tenant.labels(
+            operation_type=info.operation.operation.value,
+            operation_name=self._get_operation_name(info),
+            status="success",
+            tenant=tenant,
+        ).inc()
+        return result
+```
+
+## Adding a Custom Histogram Bucket
+
+Override `metrics.py` in your project to redefine the histogram with custom buckets:
+
+```python
+from prometheus_client import Histogram
+
+graphql_request_duration_seconds = Histogram(
+    "graphql_request_duration_seconds",
+    "Duration of GraphQL request execution in seconds",
+    ["operation_type", "operation_name"],
+    buckets=[0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0],
+)
+```
+
+!!! warning
+    The `prometheus_client` library raises an error if you try to register a metric with the same name twice.
+    Either override the metric **before** the library is loaded, or use a custom registry.
+
+## Adding Custom Query Logging Fields
+
+Subclass `GraphQLQueryLoggingMiddleware` to capture additional context:
+
+```python
+from graphene_django_observability.logging_middleware import GraphQLQueryLoggingMiddleware
+
+
+class AuditLoggingMiddleware(GraphQLQueryLoggingMiddleware):
+    def resolve(self, next, root, info, **kwargs):
+        result = super().resolve(next, root, info, **kwargs)
+        if root is None:
+            request = info.context
+            meta = getattr(request, "_graphql_logging_meta", None)
+            if meta is not None:
+                meta["ip_address"] = request.META.get("REMOTE_ADDR", "unknown")
+        return result
 ```

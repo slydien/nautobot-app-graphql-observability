@@ -1,64 +1,55 @@
-# Contributing to the App
+# Contributing
 
-The project is packaged with a light [development environment](dev_environment.md) based on `docker-compose` to help with the local development of the project and to run tests.
+Contributions are very welcome!  Please open an issue or pull request on [GitHub](https://github.com/slydien/nautobot-app-graphql-observability).
 
-The project is following Network to Code software development guidelines and is leveraging the following:
+## Guidelines
 
-- Python linting and formatting: `pylint` and `ruff`.
-- YAML linting is done with `yamllint`.
-- Django unit test to ensure the app is working properly.
-- Django Template linting: `djlint`
-- Django Template formatting: `djhtml`
+- **One change per PR.** Keep PRs focused.
+- **Tests required.** All new code must be covered by unit tests.
+- **Changelog entry required.** Every PR must include a changelog fragment (see below).
+- **Docs updated.** Update the documentation if you add or change user-visible behaviour.
 
-Documentation is built using [mkdocs](https://www.mkdocs.org/). The [Docker based development environment](dev_environment.md#docker-development-environment) automatically starts a container hosting a live version of the documentation website on [http://localhost:8001](http://localhost:8001) that auto-refreshes when you make any changes to your local files.
+## Changelog Fragments
 
-## Creating Changelog Fragments
+This project uses [towncrier](https://towncrier.readthedocs.io/) for changelog management.
 
-All pull requests to `next` or `develop` must include a changelog fragment file in the `./changes` directory. To create a fragment, use your GitHub issue number and fragment type as the filename. For example, `2362.added`. Valid fragment types are `added`, `changed`, `deprecated`, `fixed`, `removed`, and `security`. The change summary is added to the file in plain text. Change summaries should be complete sentences, starting with a capital letter and ending with a period, and be in past tense. Each line of the change fragment will generate a single change entry in the release notes. Use multiple lines in the same file if your change needs to generate multiple release notes in the same category. If the change needs to create multiple entries in separate categories, create multiple files.
+Create a fragment file in the `changes/` directory named `<issue-number>.<type>.md`:
 
-!!! example
+```
+changes/
+  123.added.md     ← new feature
+  124.fixed.md     ← bug fix
+  125.changed.md   ← behaviour change
+  126.removed.md   ← removal
+  127.security.md  ← security fix
+  128.dependencies.md ← dependency update
+  129.documentation.md ← docs-only change
+  130.housekeeping.md  ← internal/CI change
+```
 
-    **Wrong**
-    ```plaintext title="changes/1234.fixed"
-    fix critical bug in documentation
-    ```
+The content of the file is the plain-text description of the change, e.g.:
 
-    **Right**
-    ```plaintext title="changes/1234.fixed"
-    Fixed critical bug in documentation.
-    ```
+```
+Added `graphql_paths` setting to control which URL paths are instrumented.
+```
 
-!!! example "Multiple Entry Example"
+## Branching
 
-    This will generate 2 entries in the `fixed` category and one entry in the `changed` category.
+- Branch off `main` for all changes.
+- Name your branch `<your-handle>/<short-description>`, e.g. `slydien/add-mutation-label`.
 
-    ```plaintext title="changes/1234.fixed"
-    Fixed critical bug in documentation.
-    Fixed release notes generation.
-    ```
+## Running the Full Check Suite
 
-    ```plaintext title="changes/1234.changed"
-    Changed release notes generation.
-    ```
+```shell
+# Format check
+ruff format --check .
 
-## Branching Policy
+# Lint
+ruff check .
 
-The branching policy includes the following tenets:
+# Tests
+python -m django test graphene_django_observability --settings=test_settings
 
-- The `develop` branch is the branch of the next major and minor paired version planned.
-- PRs intended to add new features should be sourced from the `develop` branch.
-- PRs intended to fix issues in the Nautobot LTM compatible release should be sourced from the latest `ltm-<major.minor>` branch instead of `develop`.
-
-Nautobot App GraphQL Observability will observe semantic versioning, as of 1.0. This may result in a quick turnaround in minor versions to keep pace with an ever-growing feature set.
-
-### Backporting to Older Releases
-
-If you are backporting any fixes to a prior major or minor version of this app, please open an issue, comment on an existing issue, or post in the [Network to Code Slack](https://networktocode.slack.com/) (channel `#nautobot`).
-
-We will create a `release-X.Y` branch for you to open your PR against and cut a new release once the PR is successfully merged.
-
-## Release Policy
-
-Nautobot App GraphQL Observability has currently no intended scheduled release schedule, and will release new features in minor versions.
-
-The steps taken by maintainers when creating a new release are documented in the [release checklist](./release_checklist.md).
+# Docs build
+mkdocs build --strict
+```
